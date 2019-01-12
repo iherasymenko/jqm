@@ -26,7 +26,7 @@ so only use this mechanism when a "hard priority" is desired.
 Resources
 ++++++++++++++
 
-A second tweak is resources available to the poller. A pure FIFO queue would only start one job instance at the same time, wait for its end, rince and repeat.
+A second tweak is resources available to the poller. A pure FIFO queue would only start one job instance at the same time, wait for its end, rinse and repeat.
 This may be useful in many situations, but most often the administrator will want to run a specified count of job instances in parallel.
 Therefore we introduce the notion of resource: a job instance may need some resource in order to run.
 
@@ -138,3 +138,41 @@ Highlander resource manager
 +++++++++++++++++++++++++++++++
 
 This applies the highlander rules. As it has no parameters, it is not detailed further.
+
+
+The default resource scheduler
+***********************************
+
+Allocating resources is a complex problem. The reader is invited to read `the wikipedia page on the subject <https://en.wikipedia.org/wiki/Scheduling_(computing)>`_ to convince themselves if needed.
+The important part is that compromises must be made between different goals. Also, JQM aims to give by default a sensible and easy to understand experience more than aiming at extreme optimizations.
+
+Therefore, in JQM the default scheduler sets itself the following goals, in order of decreasing priority:
+
+* fairness (understood as each job request getting appropriate resources)
+* wait time (a job request should wait as little as possible in queue)
+* throughput (the resources should be used as much as possible)
+
+
+
+The default scheduler works this way: every second (by default, this is a parameter), the scheduler *polls* all the queues affected to the local node.
+At the beginning of a poll, the scheduler takes the *head* of each queue. This means the **highest priority, then the oldest** job requests waiting in all the queues.
+It takes more job requests than it can possibly swallow to take into account the fact that other JQM nodes may 'steal' the job requests while it is processing them.
+
+The queues are sorted according to the time waited in queue by their "first" (the head of the head) job request. The queue with the job request having waited for the longest
+becomes the highest priority queue, etc. (note that a frozen job request is still waiting in a queue, and therefore this counts for its time waited in queue).
+
+Then, the first *scheduling tour* starts.
+
+For each queue, according to the order set above, the scheduler takes the first job request and interrogates all resource managers associated to the queue (without order). They either answer:
+
+* I have enough resources for this job request
+* I do not have the resources for this job request
+
+If there are not enough resources, the scheduler is done with this queue for the rest of the poll - it won't consider anymore job requests from this queue until the next poll.
+Also, the resource manager will be considered full for the rest of the poll - even if it still has a few resources free. That way, the scheduler actually waits for the resource
+to free up for the oldest waiting job request (at the cost of not using all the resources of the server all the time).
+
+If there are enough resources inside all resource managers, the scheduler sets the job request for actual execution. It then goes on to the first job request of the next queue.
+The scheduling tour ends when the first job request of the last queue has been analyzed.
+
+If all the different resource managers of at least one queue report at the end of the scheduling tour that they still have free room, another tour is launched. Otherwise, the poll ends.
