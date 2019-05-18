@@ -16,6 +16,10 @@ import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.RRoleDto;
 import com.enioka.api.admin.RUserDto;
 import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.admin.ResourceManagerMappingDto;
+import com.enioka.api.admin.ResourceManagerNodeMappingDto;
+import com.enioka.api.admin.ResourceManagerPollerMappingDto;
+import com.enioka.api.admin.ResourceManagerMappingDto.TargetType;
 import com.enioka.api.helpers.BaseParameterDto;
 import com.enioka.jqm.jdbc.DatabaseException;
 import com.enioka.jqm.jdbc.DbConn;
@@ -68,6 +72,9 @@ public class MetaService
 
         cnx.runUpdate("globalprm_delete_all");
         cnx.runUpdate("dp_delete_all");
+        cnx.runUpdate("rmmn_delete_all");
+        cnx.runUpdate("rmmp_delete_all");
+        cnx.runUpdate("rm_delete_all");
         cnx.runUpdate("sjprm_delete_all");
         cnx.runUpdate("sj_delete_all");
         cnx.runUpdate("jdprm_delete_all");
@@ -1628,6 +1635,232 @@ public class MetaService
             {
                 cnx.runUpdate("configprm_insert", dto.getId(), "RM", i.getKey(), i.getValue());
             }
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // RESOURCE MANAGER NODE MAPPING
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static void upsertResourceManagerNodeMapping(DbConn cnx, ResourceManagerNodeMappingDto dto)
+    {
+        if (dto.getId() != null)
+        {
+            cnx.runUpdate("rmmn_update_changed", dto.getResourceManagerId(), dto.getNodeId(), dto.getId(), dto.getResourceManagerId(),
+                    dto.getNodeId());
+
+            // Parameters
+            cnx.runUpdate("configprm_delete_by_item_id", dto.getId(), "RMMN");
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RMMN", i.getKey(), i.getValue());
+            }
+        }
+        else
+        {
+            QueryResult r = cnx.runUpdate("rmmn_insert", dto.getResourceManagerId(), dto.getNodeId());
+            dto.setId(r.getGeneratedId());
+
+            // Parameters
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RMMN", i.getKey(), i.getValue());
+            }
+        }
+    }
+
+    private static ResourceManagerNodeMappingDto mapResourceManagerMapping(ResultSet rs, int colShift, DbConn cnx)
+    {
+        try
+        {
+            ResourceManagerNodeMappingDto tmp = new ResourceManagerNodeMappingDto();
+
+            tmp.setId(rs.getInt(1 + colShift));
+            tmp.setResourceManagerId(rs.getInt(2 + colShift));
+            tmp.setNodeId(rs.getInt(3 + colShift));
+
+            return tmp;
+        }
+        catch (SQLException e)
+        {
+            throw new JqmAdminApiInternalException(e);
+        }
+    }
+
+    private static List<ResourceManagerNodeMappingDto> getResourceManagerNodeMappings(DbConn cnx, String query_key, int colShift,
+            Object... params)
+    {
+        List<ResourceManagerNodeMappingDto> res = new ArrayList<>();
+        try
+        {
+            List<Integer> ids = new ArrayList<>();
+            ResultSet rs = cnx.runSelect(query_key, params);
+            ResourceManagerNodeMappingDto tmp = null;
+            while (rs.next())
+            {
+                tmp = mapResourceManagerMapping(rs, colShift, cnx);
+                res.add(tmp);
+                ids.add(tmp.getId());
+            }
+            rs.close();
+
+            // No need for parameters if no results.
+            if (res.isEmpty())
+            {
+                return res;
+            }
+
+            // Fetch parameters
+            rs = cnx.runSelect("configprm_select_for_item_list", "RMMN", ids);
+            while (rs.next())
+            {
+                int itemId = rs.getInt(2);
+                String key = rs.getString(4);
+                String value = rs.getString(5);
+
+                for (BaseParameterDto dto : res)
+                {
+                    if (dto.getId().equals(itemId))
+                    {
+                        dto.addParameter(key, value);
+                    }
+                }
+            }
+            rs.close();
+        }
+        catch (SQLException e)
+        {
+            throw new DatabaseException(e);
+        }
+        return res;
+    }
+
+    public static List<ResourceManagerNodeMappingDto> getResourceManagerNodeMappings(DbConn cnx)
+    {
+        return getResourceManagerNodeMappings(cnx, "rmmn_select_all", 0);
+    }
+
+    public static void deleteResourceManagerNodeMapping(DbConn cnx, int id)
+    {
+        cnx.runUpdate("configprm_delete_by_item_id", id, "RMMN");
+        QueryResult qr = cnx.runUpdate("rmmn_delete_by_id", id);
+        if (qr.nbUpdated != 1)
+        {
+            cnx.setRollbackOnly();
+            throw new JqmAdminApiUserException("no item with ID " + id);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // RESOURCE MANAGER POLLER MAPPING
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static void upsertResourceManagerPollerMapping(DbConn cnx, ResourceManagerPollerMappingDto dto)
+    {
+        if (dto.getId() != null)
+        {
+            cnx.runUpdate("rmmp_update_changed", dto.getResourceManagerId(), dto.getPollerId(), dto.getId(), dto.getResourceManagerId(),
+                    dto.getPollerId());
+
+            // Parameters
+            cnx.runUpdate("configprm_delete_by_item_id", dto.getId(), "RMMP");
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RMMP", i.getKey(), i.getValue());
+            }
+        }
+        else
+        {
+            QueryResult r = cnx.runUpdate("rmmp_insert", dto.getResourceManagerId(), dto.getPollerId());
+            dto.setId(r.getGeneratedId());
+
+            // Parameters
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RMMP", i.getKey(), i.getValue());
+            }
+        }
+    }
+
+    private static ResourceManagerPollerMappingDto mapResourceManagerPollerMapping(ResultSet rs, int colShift, DbConn cnx)
+    {
+        try
+        {
+            ResourceManagerPollerMappingDto tmp = new ResourceManagerPollerMappingDto();
+
+            tmp.setId(rs.getInt(1 + colShift));
+            tmp.setResourceManagerId(rs.getInt(2 + colShift));
+            tmp.setPollerId(rs.getInt(3 + colShift));
+
+            return tmp;
+        }
+        catch (SQLException e)
+        {
+            throw new JqmAdminApiInternalException(e);
+        }
+    }
+
+    private static List<ResourceManagerPollerMappingDto> getResourceManagerPollerMappings(DbConn cnx, String query_key, int colShift,
+            Object... params)
+    {
+        List<ResourceManagerPollerMappingDto> res = new ArrayList<>();
+        try
+        {
+            List<Integer> ids = new ArrayList<>();
+            ResultSet rs = cnx.runSelect(query_key, params);
+            ResourceManagerPollerMappingDto tmp = null;
+            while (rs.next())
+            {
+                tmp = mapResourceManagerPollerMapping(rs, colShift, cnx);
+                res.add(tmp);
+                ids.add(tmp.getId());
+            }
+            rs.close();
+
+            // No need for parameters if no results.
+            if (res.isEmpty())
+            {
+                return res;
+            }
+
+            // Fetch parameters
+            rs = cnx.runSelect("configprm_select_for_item_list", "RMMP", ids);
+            while (rs.next())
+            {
+                int itemId = rs.getInt(2);
+                String key = rs.getString(4);
+                String value = rs.getString(5);
+
+                for (BaseParameterDto dto : res)
+                {
+                    if (dto.getId().equals(itemId))
+                    {
+                        dto.addParameter(key, value);
+                    }
+                }
+            }
+            rs.close();
+        }
+        catch (SQLException e)
+        {
+            throw new DatabaseException(e);
+        }
+        return res;
+    }
+
+    public static List<ResourceManagerPollerMappingDto> getResourceManagerPollerMappings(DbConn cnx)
+    {
+        return getResourceManagerPollerMappings(cnx, "rmmp_select_all", 0);
+    }
+
+    public static void deleteResourceManagerPollerMapping(DbConn cnx, int id)
+    {
+        cnx.runUpdate("configprm_delete_by_item_id", id, "RMMP");
+        QueryResult qr = cnx.runUpdate("rmmp_delete_by_id", id);
+        if (qr.nbUpdated != 1)
+        {
+            cnx.setRollbackOnly();
+            throw new JqmAdminApiUserException("no item with ID " + id);
         }
     }
 }

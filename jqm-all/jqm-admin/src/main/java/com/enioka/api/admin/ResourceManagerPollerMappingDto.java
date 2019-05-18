@@ -22,46 +22,43 @@ import javax.xml.bind.annotation.XmlRootElement;
 import com.enioka.api.helpers.BaseParameterDto;
 
 /**
- * The association of a {@link ResourceManagerDto} with a {@link NodeDto}.
+ * The association of a {@link ResourceManagerDto} with a {@link QueueMappingDto}.
  */
 @XmlRootElement
-public class ResourceManagerMappingDto extends BaseParameterDto implements Serializable
+public class ResourceManagerPollerMappingDto extends BaseParameterDto implements Serializable
 {
     private static final long serialVersionUID = -5750890125510347623L;
 
-    public enum TargetType {
-        NODE, POLLER
-    }
-
     private Integer resourceManagerId;
-    private Integer targetId;
-    private TargetType targetType;
+    private Integer pollerId;
 
-    public TargetType getTargetType()
+    /**
+     * ID of the poller or node using the resource manager.
+     */
+    public Integer getPollerId()
     {
-        return targetType;
+        return pollerId;
     }
 
-    public void setTargetType(TargetType targetType)
+    /**
+     * ID of the poller or node using the resource manager.
+     */
+    public void setPollerId(Integer pollerId)
     {
-        this.targetType = targetType;
+        this.pollerId = pollerId;
     }
 
-    public Integer getTargetId()
-    {
-        return targetId;
-    }
-
-    public void setTargetId(Integer targetId)
-    {
-        this.targetId = targetId;
-    }
-
+    /**
+     * The resource manager being used.
+     */
     public Integer getResourceManagerId()
     {
         return resourceManagerId;
     }
 
+    /**
+     * The resource manager being used.
+     */
     public void setResourceManagerId(Integer rmId)
     {
         this.resourceManagerId = rmId;

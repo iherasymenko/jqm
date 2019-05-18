@@ -343,9 +343,24 @@ class DbImplBase
         queries.put("rm_delete_all", "DELETE FROM __T__RM");
         queries.put("rm_delete_by_id", "DELETE FROM __T__RM WHERE ID=?");
         queries.put("rm_update_changed", "UPDATE __T__RM SET IMPLEMENTATION=?, RM_KEY=?, DESCRIPTION=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (IMPLEMENTATION=? AND RM_KEY=? AND DESCRIPTION=? )");
-        queries.put("rm_select_all", "SELECT ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED FROM __T__RM");        
+        queries.put("rm_select_all", "SELECT ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED FROM __T__RM");
         queries.put("rm_select_by_id", queries.get("rm_select_all") + " WHERE ID=?");
         
+        // RESOURCE MANAGER
+        queries.put("rmmn_insert", "INSERT INTO __T__RM_NODE_MAPPING(ID, RM, NODE, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, CURRENT_TIMESTAMP)");
+        queries.put("rmmn_delete_all", "DELETE FROM __T__RM_NODE_MAPPING");
+        queries.put("rmmn_delete_by_id", "DELETE FROM __T__RM_NODE_MAPPING WHERE ID=?");
+        queries.put("rmmn_update_changed", "UPDATE __T__RM_NODE_MAPPING SET RM=?, NODE=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (RM=? AND NODE=?)");
+        queries.put("rmmn_select_all", "SELECT ID, RM, NODE, LAST_MODIFIED FROM __T__RM_NODE_MAPPING");
+        queries.put("rmmn_select_by_id", queries.get("rmmn_select_all") + " WHERE ID=?");
+
+        queries.put("rmmp_insert", "INSERT INTO __T__RM_POLLER_MAPPING(ID, RM, POLLER, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, CURRENT_TIMESTAMP)");
+        queries.put("rmmp_delete_all", "DELETE FROM __T__RM_POLLER_MAPPING");
+        queries.put("rmmp_delete_by_id", "DELETE FROM __T__RM_POLLER_MAPPING WHERE ID=?");
+        queries.put("rmmp_update_changed", "UPDATE __T__RM_POLLER_MAPPING SET RM=?, POLLER=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (RM=? AND POLLER=?)");
+        queries.put("rmmp_select_all", "SELECT ID, RM, POLLER, LAST_MODIFIED FROM __T__RM_POLLER_MAPPING");
+        queries.put("rmmp_select_by_id", queries.get("rmmp_select_all") + " WHERE ID=?");
+
         // CONFIGURATION PARAMETER
         queries.put("configprm_insert", "INSERT INTO __T__CONFIGURATION_PARAMETER(ID, ITEM, ITEM_TYPE, KEYNAME, CURRENT_VALUE) VALUES(JQM_PK.nextval, ?, ?, ?, ?)");
         queries.put("configprm_delete_by_item_id", "DELETE FROM __T__CONFIGURATION_PARAMETER WHERE ITEM=? AND ITEM_TYPE=?");
