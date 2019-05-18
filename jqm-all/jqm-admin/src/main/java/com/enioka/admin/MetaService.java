@@ -15,6 +15,8 @@ import com.enioka.api.admin.QueueDto;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.RRoleDto;
 import com.enioka.api.admin.RUserDto;
+import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.helpers.BaseParameterDto;
 import com.enioka.jqm.jdbc.DatabaseException;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.jdbc.NoResultException;
@@ -42,7 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MetaService
 {
-    private static Logger jqmlogger = LoggerFactory.getLogger(MetaService.class);
+    private static Logger jqmLogger = LoggerFactory.getLogger(MetaService.class);
 
     ///////////////////////////////////////////////////////////////////////////
     // GLOBAL DELETE
@@ -241,7 +243,7 @@ public class MetaService
                     dto.getFactory(), dto.getName(), dto.getSingleton(), dto.getTemplate(), dto.getType());
             if (qr.nbUpdated != 1)
             {
-                jqmlogger.debug("No update was done as object either does not exist or no modifications were done");
+                jqmLogger.debug("No update was done as object either does not exist or no modifications were done");
             }
 
             // Sync parameters too
@@ -858,7 +860,7 @@ public class MetaService
 
             if (qr.nbUpdated != 1)
             {
-                jqmlogger.debug("No update was done as object either does not exist or no modifications were done");
+                jqmLogger.debug("No update was done as object either does not exist or no modifications were done");
             }
         }
         else
@@ -1487,6 +1489,145 @@ public class MetaService
         for (RUserDto dto : dtos)
         {
             upsertUser(cnx, dto);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // RESOURCE MANAGER
+    ///////////////////////////////////////////////////////////////////////////
+
+    private static List<ResourceManagerDto> getResourceManagers(DbConn cnx, String query_key, int colShift, Object... params)
+    {
+        List<ResourceManagerDto> res = new ArrayList<>();
+        try
+        {
+            List<Integer> ids = new ArrayList<>();
+            ResultSet rs = cnx.runSelect(query_key, params);
+            ResourceManagerDto tmp = null;
+            while (rs.next())
+            {
+                tmp = mapResourceManager(rs, colShift, cnx);
+                res.add(tmp);
+                ids.add(tmp.getId());
+            }
+            rs.close();
+
+            // No need for parameters if no results.
+            if (res.isEmpty())
+            {
+                return res;
+            }
+
+            // Fetch parameters
+            rs = cnx.runSelect("configprm_select_for_item_list", "RM", ids);
+            while (rs.next())
+            {
+                int itemId = rs.getInt(2);
+                String key = rs.getString(4);
+                String value = rs.getString(5);
+
+                for (BaseParameterDto dto : res)
+                {
+                    if (dto.getId().equals(itemId))
+                    {
+                        dto.addParameter(key, value);
+                    }
+                }
+            }
+            rs.close();
+        }
+        catch (SQLException e)
+        {
+            throw new DatabaseException(e);
+        }
+        return res;
+    }
+
+    public static void deleteResourceManager(DbConn cnx, int id)
+    {
+        cnx.runUpdate("configprm_delete_by_item_id", id, "RM");
+        QueryResult qr = cnx.runUpdate("rm_delete_by_id", id);
+        if (qr.nbUpdated != 1)
+        {
+            cnx.setRollbackOnly();
+            throw new JqmAdminApiUserException("no item with ID " + id);
+        }
+    }
+
+    private static ResourceManagerDto mapResourceManager(ResultSet rs, int colShift, DbConn cnx)
+    {
+        try
+        {
+            ResourceManagerDto tmp = new ResourceManagerDto();
+
+            tmp.setId(rs.getInt(1 + colShift));
+            tmp.setImplementation(rs.getString(2 + colShift));
+            tmp.setKey(rs.getString(3 + colShift));
+            tmp.setDescription(rs.getString(4 + colShift));
+
+            return tmp;
+        }
+        catch (SQLException e)
+        {
+            throw new JqmAdminApiInternalException(e);
+        }
+    }
+
+    public static List<ResourceManagerDto> getResourceManagers(DbConn cnx)
+    {
+        return getResourceManagers(cnx, "rm_select_all", 0);
+    }
+
+    public static void syncResourceManagers(DbConn cnx, List<ResourceManagerDto> dtos)
+    {
+        for (ResourceManagerDto existing : getResourceManagers(cnx))
+        {
+            boolean foundInNewSet = false;
+            for (ResourceManagerDto newdto : dtos)
+            {
+                if (newdto.getId() != null && newdto.getId().equals(existing.getId()))
+                {
+                    foundInNewSet = true;
+                    break;
+                }
+            }
+
+            if (!foundInNewSet)
+            {
+                deleteResourceManager(cnx, existing.getId());
+            }
+        }
+
+        for (ResourceManagerDto dto : dtos)
+        {
+            upsertResourceManager(cnx, dto);
+        }
+    }
+
+    public static void upsertResourceManager(DbConn cnx, ResourceManagerDto dto)
+    {
+        if (dto.getId() != null)
+        {
+            cnx.runUpdate("rm_update_changed", dto.getImplementation(), dto.getKey(), dto.getDescription(), dto.getId(),
+                    dto.getImplementation(), dto.getKey(), dto.getDescription());
+
+            // Parameters
+            cnx.runUpdate("configprm_delete_by_item_id", dto.getId(), "RM");
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RM", i.getKey(), i.getValue());
+            }
+        }
+        else
+        {
+            QueryResult r = cnx.runUpdate("rm_insert", dto.getImplementation(), dto.getKey(), dto.getDescription());
+            dto.setId(r.getGeneratedId());
+
+            // Parameters
+            for (Map.Entry<String, String> i : dto.getParameters().entrySet())
+            {
+                cnx.runUpdate("configprm_insert", dto.getId(), "RM", i.getKey(), i.getValue());
+            }
         }
     }
 }

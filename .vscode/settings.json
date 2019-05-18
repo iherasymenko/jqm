@@ -64,4 +64,8 @@
     "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
     "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
     "restructuredtext.confPath": "${workspaceFolder}\\jqm-all\\jqm-doc\\src\\site\\sphinx",
+    "cSpell.words": [
+        "configprm",
+        "dtos"
+    ],
 }

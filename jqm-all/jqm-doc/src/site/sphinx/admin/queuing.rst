@@ -1,7 +1,9 @@
+.. versionadded:: 3.0.0
+   Before v3, there were no resource managers.
+
+
 Advanced queuing
 ######################
-
-.. warning:: This is preliminary documentation for a future release and not included in the released documentation.
 
 
 How queues work
@@ -144,7 +146,7 @@ The default resource scheduler
 ***********************************
 
 Allocating resources is a complex problem. The reader is invited to read `the wikipedia page on the subject <https://en.wikipedia.org/wiki/Scheduling_(computing)>`_ to convince themselves if needed.
-The important part is that compromises must be made between different goals. Also, JQM aims to give by default a sensible and easy to understand experience more than aiming at extreme optimizations.
+The important part is that compromises must be made between different goals. In our case, JQM aims to give by default a sensible and easy to understand experience more than aiming at extreme optimizations.
 
 Therefore, in JQM the default scheduler sets itself the following goals, in order of decreasing priority:
 

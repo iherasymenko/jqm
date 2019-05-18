@@ -337,6 +337,20 @@ class DbImplBase
         // WITNESS
         queries.put("w_insert", "INSERT INTO __T__WITNESS(ID, KEYNAME, NODE, LATEST_CONTACT) VALUES(JQM_PK.nextval, 'SCHEDULER', ?, CURRENT_TIMESTAMP)");
         queries.put("w_update_take", "UPDATE __T__WITNESS SET NODE=?, LATEST_CONTACT=CURRENT_TIMESTAMP WHERE KEYNAME='SCHEDULER' AND (LATEST_CONTACT IS NULL OR NODE IS NULL OR NODE=? OR (NODE<>? AND LATEST_CONTACT < (CURRENT_TIMESTAMP - ? SECOND)))");
+
+        // RESOURCE MANAGER
+        queries.put("rm_insert", "INSERT INTO __T__RM(ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, ?, CURRENT_TIMESTAMP)");
+        queries.put("rm_delete_all", "DELETE FROM __T__RM");
+        queries.put("rm_delete_by_id", "DELETE FROM __T__RM WHERE ID=?");
+        queries.put("rm_update_changed", "UPDATE __T__RM SET IMPLEMENTATION=?, RM_KEY=?, DESCRIPTION=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (IMPLEMENTATION=? AND RM_KEY=? AND DESCRIPTION=? )");
+        queries.put("rm_select_all", "SELECT ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED FROM __T__RM");        
+        queries.put("rm_select_by_id", queries.get("rm_select_all") + " WHERE ID=?");
+        
+        // CONFIGURATION PARAMETER
+        queries.put("configprm_insert", "INSERT INTO __T__CONFIGURATION_PARAMETER(ID, ITEM, ITEM_TYPE, KEYNAME, CURRENT_VALUE) VALUES(JQM_PK.nextval, ?, ?, ?, ?)");
+        queries.put("configprm_delete_by_item_id", "DELETE FROM __T__CONFIGURATION_PARAMETER WHERE ITEM=? AND ITEM_TYPE=?");
+        queries.put("configprm_select_all", "SELECT ID, ITEM, ITEM_TYPE, KEYNAME, CURRENT_VALUE FROM __T__CONFIGURATION_PARAMETER");
+        queries.put("configprm_select_for_item_list", queries.get("configprm_select_all") +  " WHERE ITEM_TYPE=? AND ITEM IN(UNNEST(?))");
     }
    
 }

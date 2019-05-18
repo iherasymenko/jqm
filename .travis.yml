@@ -131,3 +131,4 @@ jobs:
 branches:
     except:
         - controller
+        - newpolling
