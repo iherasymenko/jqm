@@ -224,8 +224,8 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
 
             for (ResourceManagerUsage rmu : e.getValue())
             {
-                jqmlogger.info("\t\t{} - {}", rmu.resourceManagerConfiguration.getDescription(),
-                        rmu.resourceManagerConfiguration.getClass());
+                jqmlogger.info("\t\t{} ({}) - {}", rmu.resourceManagerConfiguration.getDescription(),
+                        rmu.resourceManagerConfiguration.getKey(), rmu.resourceManagerInstance.getClass());
                 for (Map.Entry<String, String> prm : rmu.resourceManagerConfiguration.getParameters().entrySet())
                 {
                     jqmlogger.info("\t\t\t{} - {}", prm.getKey(), prm.getValue());

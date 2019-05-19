@@ -10,7 +10,6 @@ import com.enioka.jqm.api.JqmClientFactory;
 import com.enioka.jqm.api.JqmInvalidRequestException;
 import com.enioka.jqm.api.Query;
 import com.enioka.jqm.api.State;
-import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.Queue;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
@@ -211,6 +210,7 @@ public class QueueTest extends JqmBaseTest
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
         createThreadLimitedPoller(TestHelpers.node.getId(), qId, 2);
+        addQuantityResourceManagerToNode("thread", 2, TestHelpers.node.getId());
 
         Map<String, String> prms = new HashMap<>(1);
         prms.put("com.enioka.jqm.rm.quantity.thread.consumption", "2"); // using fully qualified RM with RM name 'thread' - not the generic
@@ -248,8 +248,9 @@ public class QueueTest extends JqmBaseTest
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
         createThreadLimitedPoller(TestHelpers.node.getId(), qId, 2);
+        addQuantityResourceManagerToNode("thread", 10, TestHelpers.node.getId());
 
-        Map<String, String> prms = new HashMap<>(1);
+        Map<String, String> prms = new HashMap<>(2);
         prms.put("com.enioka.jqm.rm.quantity.thread.consumption", "2");
         prms.put("whatever", "value");
         CreationTools.createJobDef(null, true, "pyl.MessagePerParameter", prms, "jqm-tests/jqm-test-pyl/target/test.jar", qId, 42,
@@ -267,7 +268,7 @@ public class QueueTest extends JqmBaseTest
         Assert.assertEquals(0, TestHelpers.getQueueRunningCount(cnx));
         Assert.assertEquals(0, TestHelpers.getQueueAllCount(cnx));
 
-        // Check the parameter wazs removed by the RM
+        // Check the parameter was removed by the RM
         JobInstance ji = JqmClientFactory.getClient().getJob(i1);
         Assert.assertEquals(1, ji.getMessages().size());
     }
@@ -278,11 +279,8 @@ public class QueueTest extends JqmBaseTest
     {
         // Create queue
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 40); // 40 threads, so not the limiting factor.
-
-        // Enable the global discrete RM.
-        GlobalParameter.setParameter(cnx, "discreteRmName", "ports");
-        GlobalParameter.setParameter(cnx, "discreteRmList", "port01,port02");
+        int pollerId = createThreadLimitedPoller(TestHelpers.node.getId(), qId, 40); // 40 threads, so not the limiting factor.
+        addDiscreteResourceManagerToPoller("ports", "port01,port02", pollerId);
 
         Map<String, String> prms = new HashMap<>(1);
         prms.put("com.enioka.jqm.rm.discrete.consumption", "1");

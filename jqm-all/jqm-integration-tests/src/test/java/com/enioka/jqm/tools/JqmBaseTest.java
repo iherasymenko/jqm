@@ -26,6 +26,7 @@ import javax.naming.spi.NamingManager;
 import com.enioka.admin.MetaService;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.admin.ResourceManagerNodeMappingDto;
 import com.enioka.api.admin.ResourceManagerPollerMappingDto;
 import com.enioka.jqm.api.JobInstance;
 import com.enioka.jqm.api.JqmClientFactory;
@@ -262,7 +263,7 @@ public class JqmBaseTest
         jqmlogger.debug("==========================================================================================");
     }
 
-    public void createThreadLimitedPoller(int nodeId, int queueId, Integer maxThreads)
+    public int createThreadLimitedPoller(int nodeId, int queueId, Integer maxThreads)
     {
         QueueMappingDto poller = new QueueMappingDto();
         poller.setNodeId(nodeId);
@@ -273,11 +274,42 @@ public class JqmBaseTest
         localRm.setDescription("Thread counter for queue " + queueId);
         localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
         localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", maxThreads.toString());
-        // localRm.setId(poller.getId());
         MetaService.upsertResourceManager(cnx, localRm);
 
         ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
         cfg.setPollerId(poller.getId());
+        cfg.setResourceManagerId(localRm.getId());
+        MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
+
+        return poller.getId();
+    }
+
+    public void addQuantityResourceManagerToNode(String key, Integer quantity, int nodeId)
+    {
+        ResourceManagerDto localRm = new ResourceManagerDto();
+        localRm.setKey(key);
+        localRm.setDescription("Counter for node " + nodeId);
+        localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
+        localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", quantity.toString());
+        MetaService.upsertResourceManager(cnx, localRm);
+
+        ResourceManagerNodeMappingDto cfg = new ResourceManagerNodeMappingDto();
+        cfg.setNodeId(nodeId);
+        cfg.setResourceManagerId(localRm.getId());
+        MetaService.upsertResourceManagerNodeMapping(cnx, cfg);
+    }
+
+    public void addDiscreteResourceManagerToPoller(String key, String items, int pollerId)
+    {
+        ResourceManagerDto localRm = new ResourceManagerDto();
+        localRm.setKey(key);
+        localRm.setDescription("Discrete resource manager");
+        localRm.setImplementation("com.enioka.jqm.tools.DiscreteResourceManager");
+        localRm.addParameter("com.enioka.jqm.rm.discrete.list", items);
+        MetaService.upsertResourceManager(cnx, localRm);
+
+        ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
+        cfg.setPollerId(pollerId);
         cfg.setResourceManagerId(localRm.getId());
         MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
     }
