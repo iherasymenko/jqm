@@ -70,6 +70,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
 
     // Threads that together constitute the engine
     private Map<Integer, QueuePoller> pollers = new HashMap<>();
+    private DefaultResourceScheduler resourceScheduler = null;
     private InternalPoller intPoller = null;
     private Thread intPollerThread = null;
     private CronScheduler scheduler = null;
@@ -81,10 +82,12 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     private AtomicLong endedInstances = new AtomicLong(0);
     private RunnerManager runnerManager;
     private RunningJobInstanceManager runningJobInstanceManager;
+    private ResourceManagerManager resourceManagerManager;
     private List<ResourceManagerBase> resourceManagers = new ArrayList<>();
 
     // DB connection resilience data
     private volatile Queue<QueuePoller> qpToRestart = new LinkedBlockingQueue<>();
+    private volatile Queue<IScheduler> schedulerToRestart = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToFinalize = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToRestart = new LinkedBlockingQueue<>();
     private volatile Thread qpRestarter = null;
@@ -222,10 +225,13 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         runnerManager = new RunnerManager(cnx);
 
         // Resource managers
-        initResourceManagers(cnx);
+        // initResourceManagers(cnx);
 
         // Pollers
-        syncPollers(cnx, this.node);
+        // syncPollers(cnx, this.node);
+        initQueuePolling(cnx, this.node);
+        Thread t = new Thread(resourceScheduler);
+        t.start();
         jqmlogger.info("All required queues are now polled");
 
         // Internal poller (stop notifications, keep alive)
@@ -292,13 +298,19 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
             p.stop();
         }
 
+        // Resource Scheduler (includes pollers)
+        if (this.resourceScheduler != null)
+        {
+            this.resourceScheduler.stop();
+        }
+
         // Scheduler
         this.scheduler.stop();
 
         // Jetty is closed automatically when all pollers are down
 
         // Wait for the end of the world
-        if (pollerCount > 0)
+        if (pollerCount > 0 || this.resourceScheduler != null)
         {
             try
             {
@@ -330,6 +342,12 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     Node getNode()
     {
         return this.node;
+    }
+
+    synchronized private void initQueuePolling(DbConn cnx, Node node)
+    {
+        this.resourceManagerManager = new ResourceManagerManager(Helpers.getExtClassLoader());
+        this.resourceScheduler = new DefaultResourceScheduler(cnx, node, this, this.resourceManagerManager);
     }
 
     synchronized void syncPollers(DbConn cnx, Node node)
@@ -382,30 +400,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
                 qp.setMaxThreads(0);
             }
         }
-    }
-
-    private void initResourceManagers(DbConn cnx)
-    {
-        jqmlogger.info("Initializing node-level resource managers");
-
-        // For now, single RM using a global parameter. Future: from db configuration.
-        String itemList = GlobalParameter.getParameter(cnx, "discreteRmList", null);
-        if (itemList == null)
-        {
-            return;
-        }
-
-        ResourceManager discreteResourceManagerConfiguration = new ResourceManager();
-        discreteResourceManagerConfiguration.setClassName(DiscreteResourceManager.class.getCanonicalName());
-        discreteResourceManagerConfiguration.setDeploymentParameterId(null);
-        discreteResourceManagerConfiguration.setEnabled(true);
-        discreteResourceManagerConfiguration.setKey(GlobalParameter.getParameter(cnx, "discreteRmName", "ports"));
-        discreteResourceManagerConfiguration.setNodeId(this.node.getId());
-        discreteResourceManagerConfiguration.addParameter("com.enioka.jqm.rm.discrete.list", itemList);
-
-        ResourceManagerBase rm1 = new DiscreteResourceManager(discreteResourceManagerConfiguration);
-        rm1.refreshConfiguration(discreteResourceManagerConfiguration);
-        this.resourceManagers.add(rm1);
     }
 
     /**
@@ -521,6 +515,17 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         startDbRestarter();
     }
 
+    /**
+     * A scheduler should call this method when it encounters a database connection issue, and then should stop.<br>
+     * This will ensure the scheduler is restarted when database connectivity is restored.<br>
+     * Only scheduler which have called this method are restarted, other are deemed not to have crashed.
+     */
+    void schedulerRestartNeeded(IScheduler s)
+    {
+        schedulerToRestart.add(s);
+        startDbRestarter();
+    }
+
     void loaderFinalizationNeeded(RunningJobInstance l)
     {
         loaderToFinalize.add(l);
@@ -606,6 +611,17 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
                     Thread t = new Thread(qp);
                     t.start();
                     qp = qpToRestart.poll();
+                }
+
+                // Restart schedulers
+                IScheduler scheduler = schedulerToRestart.poll();
+                while (scheduler != null)
+                {
+                    jqmlogger.warn("resetting scheduler");
+                    scheduler.reset();
+                    Thread t = new Thread(scheduler);
+                    t.start();
+                    scheduler = schedulerToRestart.poll();
                 }
 
                 // Always restart internal poller

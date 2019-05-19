@@ -16,10 +16,8 @@ import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.RRoleDto;
 import com.enioka.api.admin.RUserDto;
 import com.enioka.api.admin.ResourceManagerDto;
-import com.enioka.api.admin.ResourceManagerMappingDto;
 import com.enioka.api.admin.ResourceManagerNodeMappingDto;
 import com.enioka.api.admin.ResourceManagerPollerMappingDto;
-import com.enioka.api.admin.ResourceManagerMappingDto.TargetType;
 import com.enioka.api.helpers.BaseParameterDto;
 import com.enioka.jqm.jdbc.DatabaseException;
 import com.enioka.jqm.jdbc.DbConn;
@@ -1571,6 +1569,7 @@ public class MetaService
             tmp.setImplementation(rs.getString(2 + colShift));
             tmp.setKey(rs.getString(3 + colShift));
             tmp.setDescription(rs.getString(4 + colShift));
+            tmp.setEnabled(rs.getBoolean(5 + colShift));
 
             return tmp;
         }
@@ -1615,8 +1614,8 @@ public class MetaService
     {
         if (dto.getId() != null)
         {
-            cnx.runUpdate("rm_update_changed", dto.getImplementation(), dto.getKey(), dto.getDescription(), dto.getId(),
-                    dto.getImplementation(), dto.getKey(), dto.getDescription());
+            cnx.runUpdate("rm_update_changed", dto.getImplementation(), dto.getKey(), dto.getDescription(), dto.isEnabled(), dto.getId(),
+                    dto.getImplementation(), dto.getKey(), dto.getDescription(), dto.isEnabled());
 
             // Parameters
             cnx.runUpdate("configprm_delete_by_item_id", dto.getId(), "RM");
@@ -1627,7 +1626,7 @@ public class MetaService
         }
         else
         {
-            QueryResult r = cnx.runUpdate("rm_insert", dto.getImplementation(), dto.getKey(), dto.getDescription());
+            QueryResult r = cnx.runUpdate("rm_insert", dto.getImplementation(), dto.getKey(), dto.getDescription(), dto.isEnabled());
             dto.setId(r.getGeneratedId());
 
             // Parameters
@@ -1738,6 +1737,11 @@ public class MetaService
     public static List<ResourceManagerNodeMappingDto> getResourceManagerNodeMappings(DbConn cnx)
     {
         return getResourceManagerNodeMappings(cnx, "rmmn_select_all", 0);
+    }
+
+    public static List<ResourceManagerNodeMappingDto> getResourceManagerNodeMappings(DbConn cnx, int nodeId)
+    {
+        return getResourceManagerNodeMappings(cnx, "rmmn_select_by_node", 0, nodeId);
     }
 
     public static void deleteResourceManagerNodeMapping(DbConn cnx, int id)

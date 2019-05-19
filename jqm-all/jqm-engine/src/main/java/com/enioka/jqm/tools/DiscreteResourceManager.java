@@ -7,10 +7,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.model.JobInstance;
-import com.enioka.jqm.model.ResourceManager;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ class DiscreteResourceManager extends ResourceManagerBase
 
     private int defaultConsumption;
 
-    DiscreteResourceManager(ResourceManager rm)
+    DiscreteResourceManager(ResourceManagerDto rm)
     {
         super(rm);
     }
@@ -63,7 +62,7 @@ class DiscreteResourceManager extends ResourceManagerBase
     }
 
     @Override
-    void refreshConfiguration(ResourceManager configuration)
+    void refreshConfiguration(ResourceManagerDto configuration)
     {
         // Read configuration
         super.refreshConfiguration(configuration);

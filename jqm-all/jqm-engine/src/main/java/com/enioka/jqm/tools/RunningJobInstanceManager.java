@@ -18,13 +18,13 @@ class RunningJobInstanceManager
     private ConcurrentHashMap<RunningJobInstance, RjiRegistration> instancesByTracker = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, RjiRegistration> instancesById = new ConcurrentHashMap<>();
 
-    void startNewJobInstance(JobInstance ji, QueuePoller qp)
+    void startNewJobInstance(JobInstance ji, IScheduler qp, JqmEngine engine)
     {
         RjiRegistration reg = new RjiRegistration();
 
         reg.ji = ji;
         reg.qp = qp;
-        reg.rji = new RunningJobInstance(ji, qp);
+        reg.rji = new RunningJobInstance(ji, engine);
 
         instancesByTracker.put(reg.rji, reg);
         instancesById.put(reg.ji.getId(), reg);
@@ -68,7 +68,7 @@ class RunningJobInstanceManager
     private class RjiRegistration
     {
         RunningJobInstance rji;
-        QueuePoller qp;
+        IScheduler qp;
         JobInstance ji;
     }
 

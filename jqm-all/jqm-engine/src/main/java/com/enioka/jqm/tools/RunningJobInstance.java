@@ -41,7 +41,6 @@ class RunningJobInstance implements Runnable, JobRunnerCallback
 
     private JobInstance ji;
     private JqmEngine engine = null;
-    private QueuePoller qp = null;
     private RunningJobInstanceManager manager = null;
 
     private JobInstanceTracker tracker;
@@ -56,11 +55,10 @@ class RunningJobInstance implements Runnable, JobRunnerCallback
      * @param ji
      * @param qp
      */
-    RunningJobInstance(JobInstance ji, QueuePoller qp)
+    RunningJobInstance(JobInstance ji, JqmEngine engine)
     {
         this.ji = ji;
-        this.qp = qp;
-        this.engine = qp.getEngine();
+        this.engine = engine;
         this.manager = engine.getRunningJobInstanceManager();
     }
 
@@ -367,8 +365,8 @@ class RunningJobInstance implements Runnable, JobRunnerCallback
     @Override
     public String getJmxBeanName()
     {
-        return "com.enioka.jqm:type=Node.Queue.JobInstance,Node=" + this.engine.getNode().getName() + ",Queue="
-                + this.qp.getQueue().getName() + ",name=" + this.ji.getId();
+        return "com.enioka.jqm:type=Node.Queue.JobInstance,Node=" + this.engine.getNode().getName() + ",Queue=" + this.ji.getQ().getName()
+                + ",name=" + this.ji.getId();
     }
 
     @Override

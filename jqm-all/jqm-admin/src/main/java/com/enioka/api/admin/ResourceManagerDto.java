@@ -33,6 +33,7 @@ public class ResourceManagerDto extends BaseParameterDto implements Serializable
     private String implementation;
     private String key;
     private String description;
+    private boolean enabled;
 
     /**
      * An optional description of what the RM does.
@@ -80,5 +81,22 @@ public class ResourceManagerDto extends BaseParameterDto implements Serializable
     public void setImplementation(String implementation)
     {
         this.implementation = implementation;
+    }
+
+    /**
+     * A disabled RM always agrees to launch job instances. An enabled RM actually applies its own internal rules to decide if a JI should
+     * launch.
+     */
+    public boolean isEnabled()
+    {
+        return enabled;
+    }
+
+    /**
+     * See {@link #isEnabled()}
+     */
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
     }
 }

@@ -21,7 +21,7 @@ public class JqmSimpleTest
     private List<String> nodeNames = new ArrayList<>();
     private String sessionId = null;
 
-    private int expectedOk = 1, expectedNonOk = 0;
+    private int expectedOk = 1, expectedNonOk = 0, expectedRunning = 0;
     private int waitMsMin = 0, waitMarginMs = 0;
 
     private JqmSimpleTest(DbConn cnx, String className, String artifactName)
@@ -67,9 +67,22 @@ public class JqmSimpleTest
         return this;
     }
 
+    /**
+     * How many ended, but not-OK history records are expected at the end of the run.
+     *
+     * @param expected
+     *                     history count.
+     * @return
+     */
     public JqmSimpleTest expectNonOk(int expected)
     {
         this.expectedNonOk = expected;
+        return this;
+    }
+
+    public JqmSimpleTest expectRunning(int expected)
+    {
+        this.expectedRunning = expected;
         return this;
     }
 
@@ -114,6 +127,8 @@ public class JqmSimpleTest
         }
         Integer i = JobRequest.create("TestJqmApplication", "TestUser").setSessionID(sessionId).setParameters(runtimePrms).submit();
         TestHelpers.waitFor(nbExpected, 9000 + waitMarginMs + nbExpected * 2000, cnx);
+        TestHelpers.waitForRunning(expectedRunning, 9000 + nbExpected * 2000, cnx);
+
         if (waitMsMin > 0)
         {
             try
@@ -128,6 +143,7 @@ public class JqmSimpleTest
 
         Assert.assertEquals(expectedOk, TestHelpers.getOkCount(cnx));
         Assert.assertEquals(expectedNonOk, TestHelpers.getNonOkCount(cnx));
+        Assert.assertEquals(expectedRunning, TestHelpers.getQueueRunningCount(cnx));
 
         return i;
     }

@@ -48,7 +48,7 @@ import com.enioka.jqm.model.State;
 /**
  * A thread that polls a queue according to the parameters defined inside a {@link DeploymentParameter}.
  */
-class QueuePoller implements Runnable, QueuePollerMBean
+class QueuePoller implements Runnable, QueuePollerMBean, IScheduler
 {
     private static Logger jqmlogger = LoggerFactory.getLogger(QueuePoller.class);
 
@@ -84,7 +84,7 @@ class QueuePoller implements Runnable, QueuePollerMBean
     /**
      * Will make the thread ready to run once again after it has stopped.
      */
-    void reset()
+    public void reset()
     {
         if (!hasStopped)
         {
@@ -100,30 +100,6 @@ class QueuePoller implements Runnable, QueuePollerMBean
     {
         this.engine = engine;
         this.queue = q;
-
-        // Hard code a thread count RM and link it to the DP parameters (transitory - no db change for now this way)
-        this.threadresourceManagerConfiguration = new ResourceManager();
-        threadresourceManagerConfiguration.setClassName(QuantityResourceManager.class.getCanonicalName());
-        threadresourceManagerConfiguration.setDeploymentParameterId(dp.getId());
-        threadresourceManagerConfiguration.setEnabled(true);
-        threadresourceManagerConfiguration.setKey("thread");
-        threadresourceManagerConfiguration.setNodeId(null);
-        threadresourceManagerConfiguration.addParameter("com.enioka.jqm.rm.quantity.quantity", "" + dp.getNbThread());
-        QuantityResourceManager threadResourceManager = new QuantityResourceManager(threadresourceManagerConfiguration);
-        this.resourceManagers.add(threadResourceManager);
-
-        // Hard code a highlander RM
-        ResourceManager highlanderResourceManagerConfiguration = new ResourceManager();
-        highlanderResourceManagerConfiguration.setClassName(HighlanderResourceManager.class.getCanonicalName());
-        highlanderResourceManagerConfiguration.setDeploymentParameterId(dp.getId());
-        highlanderResourceManagerConfiguration.setEnabled(true);
-        highlanderResourceManagerConfiguration.setKey("highlander");
-        highlanderResourceManagerConfiguration.setNodeId(null);
-        HighlanderResourceManager highlanderResourceManager = new HighlanderResourceManager(highlanderResourceManagerConfiguration);
-        this.resourceManagers.add(highlanderResourceManager);
-
-        // Add global resource managers
-        this.resourceManagers.addAll(engine.getResourceManagers());
 
         // Synchronize parameters
         applyDeploymentParameter(dp);
@@ -142,7 +118,7 @@ class QueuePoller implements Runnable, QueuePollerMBean
                 pollingInterval / 1000);
 
         this.threadresourceManagerConfiguration.addParameter("com.enioka.jqm.rm.quantity.quantity", "" + this.maxNbThread);
-        this.resourceManagers.get(0).refreshConfiguration(this.threadresourceManagerConfiguration);
+        // this.resourceManagers.get(0).refreshConfiguration(this.threadresourceManagerConfiguration);
     }
 
     /**
@@ -293,7 +269,7 @@ class QueuePoller implements Runnable, QueuePollerMBean
                         // Run it
                         if (!ji.getJD().isExternal())
                         {
-                            this.engine.getRunningJobInstanceManager().startNewJobInstance(ji, this);
+                            this.engine.getRunningJobInstanceManager().startNewJobInstance(ji, this, this.engine);
                         }
                         else
                         {
@@ -406,7 +382,8 @@ class QueuePoller implements Runnable, QueuePollerMBean
     /**
      * Called when a payload thread has ended. This also notifies the poller to poll once again.
      */
-    void releaseResources(JobInstance ji)
+    @Override
+    public void releaseResources(JobInstance ji)
     {
         this.peremption.remove(ji.getId());
         this.actualNbThread.decrementAndGet();

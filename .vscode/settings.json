@@ -13,11 +13,7 @@
         "**/.settings": true,
         "**/.factorypath": true
     },
-    "LineCount.includes": [
-        "**/*.java",
-        "**/*.js",
-        "**/*.html",
-    ],
+    "LineCount.includes": ["**/*.java", "**/*.js", "**/*.html"],
     "LineCount.excludes": [
         "**/.vscode/**",
         "**/node_modules/**",
@@ -58,16 +54,12 @@
     "maven.excludedFolders": [
         "**/.*", // exclude hidden folders
         "**/node_modules", // exclude node modules to speed up
-        "**/target", // exclude duplicated pom file in target folder
+        "**/target" // exclude duplicated pom file in target folder
     ],
     "maven.executable.options": "",
     "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
     "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
     "restructuredtext.confPath": "${workspaceFolder}\\jqm-all\\jqm-doc\\src\\site\\sphinx",
-    "cSpell.words": [
-        "RMMN",
-        "RMMP",
-        "configprm",
-        "dtos"
-    ],
+    "cSpell.words": ["RMMN", "RMMP", "configprm", "dtos", "jqmlogger"],
+    "mssql.intelliSense.enableErrorChecking": false
 }

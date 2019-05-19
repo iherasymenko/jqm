@@ -3,6 +3,7 @@ package com.enioka.jqm.tools;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.model.JobInstance;
 import com.enioka.jqm.model.ResourceManager;
@@ -18,7 +19,7 @@ abstract class ResourceManagerBase
     /**
      * The configuration object associated with this RM. Note its values can be overloaded in many places.
      */
-    protected ResourceManager definition;
+    protected ResourceManagerDto definition;
 
     /**
      * Properties after loading default properties and parameters from the RM's own definition.
@@ -34,9 +35,9 @@ abstract class ResourceManagerBase
      * Main constructor.
      *
      * @param rm
-     *               the configuration to use to instanciate the RM.
+     *               the configuration to use to instantiate the RM.
      */
-    ResourceManagerBase(ResourceManager rm)
+    ResourceManagerBase(ResourceManagerDto rm)
     {
         this.definition = rm;
     }
@@ -57,7 +58,8 @@ abstract class ResourceManagerBase
      * @param ji
      */
     void releaseResource(JobInstance ji)
-    {}
+    {
+    }
 
     /**
      * According to this resource manager, how many job instances could now be launched? This should be a very fast approximation with
@@ -81,7 +83,8 @@ abstract class ResourceManagerBase
     }
 
     protected void setDefaultProperties()
-    {}
+    {
+    }
 
     /**
      * Called by the engine when it has decided configuration has changed. Care should be taken to ensure continuity of operation despite
@@ -90,17 +93,17 @@ abstract class ResourceManagerBase
      * <br>
      * This will often be overloaded - but calling the base implementation may still be useful as it handles configuration precedence.
      */
-    void refreshConfiguration(ResourceManager configuration)
+    void refreshConfiguration(ResourceManagerDto configuration)
     {
         this.definition = configuration;
-        this.key = configuration.getKey().toLowerCase();
+        this.key = configuration.getKey() != null ? configuration.getKey().toLowerCase() : configuration.getId().toString();
         this.currentProperties = new HashMap<>();
 
         // Add hard-coded defaults to properties
         setDefaultProperties();
 
         // Add values from new configuration to properties
-        this.currentProperties.putAll(configuration.getParameterCache());
+        this.currentProperties.putAll(configuration.getParameters());
     }
 
     /**

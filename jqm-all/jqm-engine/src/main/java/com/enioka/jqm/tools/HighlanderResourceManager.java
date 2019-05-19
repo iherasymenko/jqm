@@ -2,9 +2,9 @@ package com.enioka.jqm.tools;
 
 import java.sql.ResultSet;
 
+import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.model.JobInstance;
-import com.enioka.jqm.model.ResourceManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,13 +19,13 @@ class HighlanderResourceManager extends ResourceManagerBase
 {
     private static Logger jqmlogger = LoggerFactory.getLogger(HighlanderResourceManager.class);
 
-    HighlanderResourceManager(ResourceManager rm)
+    HighlanderResourceManager(ResourceManagerDto rm)
     {
         super(rm);
     }
 
     @Override
-    void refreshConfiguration(ResourceManager configuration)
+    void refreshConfiguration(ResourceManagerDto configuration)
     {
         super.refreshConfiguration(configuration);
         jqmlogger.info("\tConfigured Highlander resource Manager");

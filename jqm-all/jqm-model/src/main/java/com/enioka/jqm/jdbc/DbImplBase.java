@@ -339,20 +339,21 @@ class DbImplBase
         queries.put("w_update_take", "UPDATE __T__WITNESS SET NODE=?, LATEST_CONTACT=CURRENT_TIMESTAMP WHERE KEYNAME='SCHEDULER' AND (LATEST_CONTACT IS NULL OR NODE IS NULL OR NODE=? OR (NODE<>? AND LATEST_CONTACT < (CURRENT_TIMESTAMP - ? SECOND)))");
 
         // RESOURCE MANAGER
-        queries.put("rm_insert", "INSERT INTO __T__RM(ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, ?, CURRENT_TIMESTAMP)");
+        queries.put("rm_insert", "INSERT INTO __T__RM(ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, ENABLED, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
         queries.put("rm_delete_all", "DELETE FROM __T__RM");
         queries.put("rm_delete_by_id", "DELETE FROM __T__RM WHERE ID=?");
-        queries.put("rm_update_changed", "UPDATE __T__RM SET IMPLEMENTATION=?, RM_KEY=?, DESCRIPTION=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (IMPLEMENTATION=? AND RM_KEY=? AND DESCRIPTION=? )");
-        queries.put("rm_select_all", "SELECT ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, LAST_MODIFIED FROM __T__RM");
+        queries.put("rm_update_changed", "UPDATE __T__RM SET IMPLEMENTATION=?, RM_KEY=?, DESCRIPTION=?, ENABLED=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (IMPLEMENTATION=? AND RM_KEY=? AND DESCRIPTION=? AND ENABLED=?)");
+        queries.put("rm_select_all", "SELECT ID, IMPLEMENTATION, RM_KEY, DESCRIPTION, ENABLED, LAST_MODIFIED FROM __T__RM");
         queries.put("rm_select_by_id", queries.get("rm_select_all") + " WHERE ID=?");
         
-        // RESOURCE MANAGER
+        // RESOURCE MANAGER MAPPING
         queries.put("rmmn_insert", "INSERT INTO __T__RM_NODE_MAPPING(ID, RM, NODE, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, CURRENT_TIMESTAMP)");
         queries.put("rmmn_delete_all", "DELETE FROM __T__RM_NODE_MAPPING");
         queries.put("rmmn_delete_by_id", "DELETE FROM __T__RM_NODE_MAPPING WHERE ID=?");
         queries.put("rmmn_update_changed", "UPDATE __T__RM_NODE_MAPPING SET RM=?, NODE=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (RM=? AND NODE=?)");
         queries.put("rmmn_select_all", "SELECT ID, RM, NODE, LAST_MODIFIED FROM __T__RM_NODE_MAPPING");
         queries.put("rmmn_select_by_id", queries.get("rmmn_select_all") + " WHERE ID=?");
+        queries.put("rmmn_select_by_node", queries.get("rmmn_select_all") + " WHERE NODE=?");
 
         queries.put("rmmp_insert", "INSERT INTO __T__RM_POLLER_MAPPING(ID, RM, POLLER, LAST_MODIFIED) VALUES(JQM_PK.nextval, ?, ?, CURRENT_TIMESTAMP)");
         queries.put("rmmp_delete_all", "DELETE FROM __T__RM_POLLER_MAPPING");

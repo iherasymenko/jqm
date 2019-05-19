@@ -4,12 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.model.JobInstance;
-import com.enioka.jqm.model.ResourceManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Resource Manager which handles a set quantity of a given resource. By default, each run requires one unit of that resource. Blocks once
@@ -32,7 +32,7 @@ class QuantityResourceManager extends ResourceManagerBase
     private int defaultConsumption;
     private Map<Integer, Integer> runningJobs = new HashMap<>(10);
 
-    QuantityResourceManager(ResourceManager rm)
+    QuantityResourceManager(ResourceManagerDto rm)
     {
         super(rm);
     }
@@ -51,7 +51,7 @@ class QuantityResourceManager extends ResourceManagerBase
     }
 
     @Override
-    void refreshConfiguration(ResourceManager configuration)
+    void refreshConfiguration(ResourceManagerDto configuration)
     {
         // Read configuration
         super.refreshConfiguration(configuration);
