@@ -15,16 +15,18 @@
  */
 package com.enioka.jqm.tools;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.naming.NamingException;
 import javax.naming.spi.NamingManager;
 
+import com.enioka.admin.MetaService;
+import com.enioka.api.admin.QueueMappingDto;
+import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.admin.ResourceManagerPollerMappingDto;
 import com.enioka.jqm.api.JobInstance;
 import com.enioka.jqm.api.JqmClientFactory;
 import com.enioka.jqm.api.Query;
@@ -48,7 +50,7 @@ public class JqmBaseTest
     public static Server s;
     protected static Db db;
     public Map<String, JqmEngineOperations> engines = new HashMap<>();
-    public List<DbConn> cnxs = new ArrayList<>();
+    public List<DbConn> connections = new ArrayList<>();
 
     protected DbConn cnx;
 
@@ -97,6 +99,7 @@ public class JqmBaseTest
         cnx = getNewDbSession();
         TestHelpers.cleanup(cnx);
         TestHelpers.createTestData(cnx);
+        Helpers.setSingleParam("schedulerPollingPeriodMs", "1", cnx);
         cnx.commit();
     }
 
@@ -110,11 +113,11 @@ public class JqmBaseTest
             e.stop();
         }
         engines.clear();
-        for (DbConn cnx : cnxs)
+        for (DbConn cnx : connections)
         {
             cnx.close();
         }
-        cnxs.clear();
+        connections.clear();
 
         // Java 6 GC being rather inefficient, we must run it multiple times to correctly collect Jetty-created class loaders and avoid
         // permgen issues
@@ -174,7 +177,7 @@ public class JqmBaseTest
     protected DbConn getNewDbSession()
     {
         DbConn cnx = db.getConn();
-        cnxs.add(cnx);
+        connections.add(cnx);
         return cnx;
     }
 
@@ -257,5 +260,25 @@ public class JqmBaseTest
                     + h.getPosition());
         }
         jqmlogger.debug("==========================================================================================");
+    }
+
+    public void createThreadLimitedPoller(int nodeId, int queueId, Integer maxThreads)
+    {
+        QueueMappingDto poller = new QueueMappingDto();
+        poller.setNodeId(nodeId);
+        poller.setQueueId(queueId);
+        MetaService.upsertQueueMapping(cnx, poller);
+
+        ResourceManagerDto localRm = new ResourceManagerDto();
+        localRm.setDescription("Thread counter for queue " + queueId);
+        localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
+        localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", maxThreads.toString());
+        // localRm.setId(poller.getId());
+        MetaService.upsertResourceManager(cnx, localRm);
+
+        ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
+        cfg.setPollerId(poller.getId());
+        cfg.setResourceManagerId(localRm.getId());
+        MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
     }
 }

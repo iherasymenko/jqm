@@ -129,7 +129,6 @@ class InternalPoller implements Runnable
                 cnx.commit();
 
                 // Have queue bindings changed, or is engine disabled?
-                this.engine.syncPollers(cnx, node);
 
                 // Should JNDI cache be purged?
                 Calendar bflkpm = Calendar.getInstance();

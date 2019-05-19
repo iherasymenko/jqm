@@ -1,7 +1,5 @@
 package com.enioka.jqm.jdbc;
 
-import java.io.Console;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;

@@ -32,21 +32,19 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
+import com.enioka.jqm.jdbc.DbConn;
+import com.enioka.jqm.jdbc.NoResultException;
+import com.enioka.jqm.model.DeploymentParameter;
+import com.enioka.jqm.model.GlobalParameter;
+import com.enioka.jqm.model.JndiObjectResource;
+import com.enioka.jqm.model.Queue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.enioka.jqm.jdbc.DatabaseException;
-import com.enioka.jqm.jdbc.DbConn;
-import com.enioka.jqm.jdbc.NoResultException;
-import com.enioka.jqm.jdbc.QueryResult;
-import com.enioka.jqm.model.DeploymentParameter;
-import com.enioka.jqm.model.GlobalParameter;
-import com.enioka.jqm.model.JndiObjectResource;
-import com.enioka.jqm.model.Queue;
 
 /**
  * Highly non-efficient way to import cluster parameters. Created to make it easier to configure Docker containers. Should not be used
@@ -246,7 +244,9 @@ class XmlConfigurationParser
                     }
                     else
                     {
-                        DeploymentParameter.create(cnx, enabled, nodeId, maxThreads, pollingIntervalMs, queueId);
+                        DeploymentParameter.create(cnx, enabled, nodeId, queueId);
+
+                        // TODO: warning if maxThreads is still used.
                     }
                 }
 

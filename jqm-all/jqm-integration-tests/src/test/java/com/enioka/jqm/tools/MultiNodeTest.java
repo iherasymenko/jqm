@@ -22,22 +22,21 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.enioka.jqm.api.JobInstance;
+import com.enioka.jqm.api.JobRequest;
+import com.enioka.jqm.api.JqmClientFactory;
+import com.enioka.jqm.api.Query;
+import com.enioka.jqm.model.Node;
+import com.enioka.jqm.model.Queue;
+import com.enioka.jqm.test.helpers.CreationTools;
+import com.enioka.jqm.test.helpers.TestHelpers;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.enioka.jqm.api.JobInstance;
-import com.enioka.jqm.api.JobRequest;
-import com.enioka.jqm.api.JqmClientFactory;
-import com.enioka.jqm.api.Query;
-import com.enioka.jqm.model.DeploymentParameter;
-import com.enioka.jqm.model.Node;
-import com.enioka.jqm.model.Queue;
-import com.enioka.jqm.test.helpers.CreationTools;
-import com.enioka.jqm.test.helpers.TestHelpers;
 
 public class MultiNodeTest extends JqmBaseTest
 {
@@ -318,16 +317,16 @@ public class MultiNodeTest extends JqmBaseTest
 
         TestHelpers.setNodesLogLevel("INFO", cnx);
 
-        DeploymentParameter.create(cnx, n0.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n1.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n2.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n3.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n4.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n5.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n6.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n7.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n8.getId(), 5, 1, qId);
-        DeploymentParameter.create(cnx, n9.getId(), 5, 1, qId);
+        createThreadLimitedPoller(n0.getId(), qId, 5);
+        createThreadLimitedPoller(n1.getId(), qId, 5);
+        createThreadLimitedPoller(n2.getId(), qId, 5);
+        createThreadLimitedPoller(n3.getId(), qId, 5);
+        createThreadLimitedPoller(n4.getId(), qId, 5);
+        createThreadLimitedPoller(n5.getId(), qId, 5);
+        createThreadLimitedPoller(n6.getId(), qId, 5);
+        createThreadLimitedPoller(n7.getId(), qId, 5);
+        createThreadLimitedPoller(n8.getId(), qId, 5);
+        createThreadLimitedPoller(n9.getId(), qId, 5);
 
         cnx.commit();
 

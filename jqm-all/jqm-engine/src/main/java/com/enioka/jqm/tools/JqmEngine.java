@@ -22,9 +22,7 @@ import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -37,13 +35,11 @@ import com.enioka.jqm.jdbc.DatabaseException;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.jdbc.NoResultException;
 import com.enioka.jqm.jdbc.QueryResult;
-import com.enioka.jqm.model.DeploymentParameter;
 import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.History;
 import com.enioka.jqm.model.JobInstance;
 import com.enioka.jqm.model.Message;
 import com.enioka.jqm.model.Node;
-import com.enioka.jqm.model.ResourceManager;
 import com.enioka.jqm.model.State;
 
 import org.slf4j.Logger;
@@ -69,7 +65,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     private ObjectName name;
 
     // Threads that together constitute the engine
-    private Map<Integer, QueuePoller> pollers = new HashMap<>();
     private DefaultResourceScheduler resourceScheduler = null;
     private InternalPoller intPoller = null;
     private Thread intPollerThread = null;
@@ -86,7 +81,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     private List<ResourceManagerBase> resourceManagers = new ArrayList<>();
 
     // DB connection resilience data
-    private volatile Queue<QueuePoller> qpToRestart = new LinkedBlockingQueue<>();
     private volatile Queue<IScheduler> schedulerToRestart = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToFinalize = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToRestart = new LinkedBlockingQueue<>();
@@ -291,13 +285,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
             }
         }
 
-        // Stop pollers
-        int pollerCount = pollers.size();
-        for (QueuePoller p : pollers.values())
-        {
-            p.stop();
-        }
-
         // Resource Scheduler (includes pollers)
         if (this.resourceScheduler != null)
         {
@@ -310,7 +297,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         // Jetty is closed automatically when all pollers are down
 
         // Wait for the end of the world
-        if (pollerCount > 0 || this.resourceScheduler != null)
+        if (this.resourceScheduler != null)
         {
             try
             {
@@ -350,58 +337,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         this.resourceScheduler = new DefaultResourceScheduler(cnx, node, this, this.resourceManagerManager);
     }
 
-    synchronized void syncPollers(DbConn cnx, Node node)
-    {
-        if (node.getEnabled())
-        {
-            List<DeploymentParameter> dps = DeploymentParameter.select(cnx, "dp_select_for_node", node.getId());
-
-            QueuePoller p = null;
-            for (DeploymentParameter i : dps)
-            {
-                if (pollers.containsKey(i.getId()))
-                {
-                    // Nothing to do - the poller updates its own parameters.
-                }
-                else
-                {
-                    p = new QueuePoller(this, com.enioka.jqm.model.Queue.select(cnx, "q_select_by_id", i.getQueue()).get(0), i);
-                    pollers.put(i.getId(), p);
-                    Thread t = new Thread(p);
-                    t.start();
-                }
-            }
-
-            // Remove deleted pollers
-            for (int dp : this.pollers.keySet().toArray(new Integer[0]))
-            {
-                boolean found = false;
-                for (DeploymentParameter ndp : dps)
-                {
-                    if (ndp.getId().equals(dp))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    QueuePoller qp = this.pollers.get(dp);
-                    qp.stop();
-                    this.pollers.remove(dp);
-                }
-            }
-        }
-        else
-        {
-            // Pause all pollers
-            for (QueuePoller qp : this.pollers.values())
-            {
-                qp.setMaxThreads(0);
-            }
-        }
-    }
-
     /**
      * @return All the resourceManagers associated with the engine itself.
      */
@@ -410,22 +345,21 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         return resourceManagers;
     }
 
+    /**
+     * Called by the scheduler(s) when they stop.
+     */
     synchronized void checkEngineEnd()
     {
         jqmlogger.trace("Checking if engine should end with the latest poller");
-        for (QueuePoller poller : pollers.values())
-        {
-            if (poller.isRunning())
-            {
-                jqmlogger.trace("At least the poller on queue " + poller.getQueue().getName() + " is still running and prevents shutdown");
-                return;
-            }
-        }
+
+        // There is currently only one scheduler allowed. So no need to check if all schedulers are done.
+        // It should be done here should we allow more schedulers one day.
+
         if (hasEnded)
         {
             return;
         }
-        jqmlogger.trace("The engine should end with the latest poller");
+        jqmlogger.trace("The engine should end with the latest scheduler");
         hasEnded = true;
 
         // If here, all pollers are down. Stop everything else.
@@ -502,17 +436,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
             cnx.runUpdate("ji_delete_by_id", ji.getId());
         }
         cnx.commit();
-    }
-
-    /**
-     * A poller should call this method when it encounters a database connection issue, and then should stop.<br>
-     * This will ensure the poller is restarted when database connectivity is restored.<br>
-     * Only pollers which have called this method are restarted, other are deemed not to have crashed.
-     */
-    void pollerRestartNeeded(QueuePoller qp)
-    {
-        qpToRestart.add(qp);
-        startDbRestarter();
     }
 
     /**
@@ -600,17 +523,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
                     {
                         Helpers.closeQuietly(cnx);
                     }
-                }
-
-                // Restart pollers
-                QueuePoller qp = qpToRestart.poll();
-                while (qp != null)
-                {
-                    jqmlogger.warn("resetting poller on queue " + qp.getQueue().getName());
-                    qp.reset();
-                    Thread t = new Thread(qp);
-                    t.start();
-                    qp = qpToRestart.poll();
                 }
 
                 // Restart schedulers
@@ -701,25 +613,13 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     @Override
     public long getCurrentlyRunningJobCount()
     {
-        Long nb = 0L;
-        for (QueuePoller p : this.pollers.values())
-        {
-            nb += p.getCurrentlyRunningJobCount();
-        }
-        return nb;
+        return this.resourceScheduler.getCurrentlyRunningJobCount();
     }
 
     @Override
     public boolean isAllPollersPolling()
     {
-        for (QueuePoller p : this.pollers.values())
-        {
-            if (!p.isActuallyPolling())
-            {
-                return false;
-            }
-        }
-        return true;
+        return this.resourceScheduler.isActuallyPolling();
     }
 
     @Override
@@ -731,25 +631,13 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     @Override
     public boolean isFull()
     {
-        for (QueuePoller p : this.pollers.values())
-        {
-            if (p.isFull())
-            {
-                return true;
-            }
-        }
         return false;
     }
 
     @Override
     public int getLateJobs()
     {
-        int res = 0;
-        for (QueuePoller p : this.pollers.values())
-        {
-            res += p.getLateJobs();
-        }
-        return res;
+        return this.resourceScheduler.getLateJobs();
     }
 
     @Override

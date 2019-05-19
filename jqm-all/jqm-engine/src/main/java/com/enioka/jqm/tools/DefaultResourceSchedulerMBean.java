@@ -18,7 +18,7 @@ package com.enioka.jqm.tools;
 /**
  * Monitoring interface for queue pollers
  */
-public interface QueuePollerMBean
+public interface DefaultResourceSchedulerMBean
 {
     /**
      * The number of currently running job instances. Thread safe.
@@ -26,19 +26,9 @@ public interface QueuePollerMBean
     Integer getCurrentActiveThreadCount();
 
     /**
-     * Prevents the engine to take any more jobs on that queue. Once all running jobs end, the poller stops.
+     * Prevents the engine to take any more jobs on that scheduler. Once all running jobs end, the poller stops.
      */
     void stop();
-
-    /**
-     * Number of seconds between two database checks for new job instance to run.
-     */
-    Integer getPollingIntervalMilliseconds();
-
-    /**
-     * Max number of simultaneously running job instances on this queue on this engine
-     */
-    Integer getMaxConcurrentJobInstanceCount();
 
     /**
      * The total number of job instances that were run on this node/queue since the last history purge.
@@ -61,11 +51,6 @@ public interface QueuePollerMBean
      */
     boolean isActuallyPolling();
 
-    /**
-     * True if running count equals max job number
-     */
-    boolean isFull();
-    
     /**
      * The count of running jobs that have run for more than their maxTimeRunning time.
      */

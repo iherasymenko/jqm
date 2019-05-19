@@ -38,8 +38,6 @@ public class DeploymentParameter
     private Integer id;
     private Integer classId;
     private int node;
-    private int nbThread;
-    private int pollingInterval;
     private int queue;
     private boolean enabled = true;
     private Calendar lastModified;
@@ -77,24 +75,6 @@ public class DeploymentParameter
     }
 
     /**
-     * The maximum of concurrent {@link JobInstance} executions for the {@link Queue} designated by {@link #getQueue()} on the {@link Node}
-     * designated by {@link #getNode()}. The queue is considered "full" once there as many active executions as this number and the engine
-     * will ignore new execution requests until a running {@link JobInstance} ends.
-     */
-    public Integer getNbThread()
-    {
-        return nbThread;
-    }
-
-    /**
-     * See {@link #getNbThread()}
-     */
-    public void setNbThread(final Integer nbThread)
-    {
-        this.nbThread = nbThread;
-    }
-
-    /**
      * The {@link Node} that will have to poll the {@link Queue} designated by {@link #getQueue()} for new {@link JobInstance}s to run.
      */
     public int getNode()
@@ -108,23 +88,6 @@ public class DeploymentParameter
     public void setNode(final int node)
     {
         this.node = node;
-    }
-
-    /**
-     * The period in milliseconds between two peeks on the {@link Queue} designated by {@link #getQueue()} (looking for {@link JobInstance}s
-     * to run). Reasonable minimum is 1000 (1s).
-     */
-    public Integer getPollingInterval()
-    {
-        return pollingInterval;
-    }
-
-    /**
-     * See {@link #getPollingInterval()}
-     */
-    public void setPollingInterval(final Integer pollingInterval)
-    {
-        this.pollingInterval = pollingInterval;
     }
 
     /**
@@ -179,29 +142,26 @@ public class DeploymentParameter
 
     public static DeploymentParameter create(DbConn cnx, Node node, Integer nbThread, Integer pollingInterval, Integer queueId)
     {
-        return create(cnx, node.getId(), nbThread, pollingInterval, queueId);
+        return create(cnx, node.getId(), queueId);
     }
 
     /**
      * Create a new entry in the database. No commit performed.
      */
-    public static DeploymentParameter create(DbConn cnx, Boolean enabled, Integer nodeId, Integer nbThread, Integer pollingInterval,
-            Integer qId)
+    public static DeploymentParameter create(DbConn cnx, Boolean enabled, Integer nodeId, Integer qId)
     {
-        QueryResult r = cnx.runUpdate("dp_insert", enabled, nbThread, pollingInterval, nodeId, qId);
+        QueryResult r = cnx.runUpdate("dp_insert", enabled, nodeId, qId);
         DeploymentParameter res = new DeploymentParameter();
         res.id = r.getGeneratedId();
         res.node = nodeId;
-        res.nbThread = nbThread;
-        res.pollingInterval = pollingInterval;
         res.queue = qId;
 
         return res;
     }
 
-    public static DeploymentParameter create(DbConn cnx, Integer nodeId, Integer nbThread, Integer pollingInterval, Integer qId)
+    public static DeploymentParameter create(DbConn cnx, Integer nodeId, Integer qId)
     {
-        return create(cnx, true, nodeId, nbThread, pollingInterval, qId);
+        return create(cnx, true, nodeId, qId);
     }
 
     public static List<DeploymentParameter> select(DbConn cnx, String query_key, Object... args)
@@ -221,10 +181,8 @@ public class DeploymentParameter
                 c.setTimeInMillis(rs.getTimestamp(3).getTime());
                 tmp.lastModified = c;
 
-                tmp.nbThread = rs.getInt(4);
-                tmp.pollingInterval = rs.getInt(5);
-                tmp.node = rs.getInt(6);
-                tmp.queue = rs.getInt(7);
+                tmp.node = rs.getInt(4);
+                tmp.queue = rs.getInt(5);
 
                 res.add(tmp);
             }

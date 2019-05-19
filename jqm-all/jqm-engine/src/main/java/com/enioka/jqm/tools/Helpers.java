@@ -44,6 +44,9 @@ import org.apache.shiro.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.enioka.admin.MetaService;
+import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.admin.ResourceManagerPollerMappingDto;
 import com.enioka.jqm.api.JqmClientFactory;
 import com.enioka.jqm.jdbc.Db;
 import com.enioka.jqm.jdbc.DbConn;
@@ -332,7 +335,19 @@ final class Helpers
         {
             jqmlogger.info("As this node is not bound to any queue, it will be set to poll from the default queue with default parameters");
             Integer default_queue_id = cnx.runSelectSingle("q_select_default", 1, Integer.class);
-            DeploymentParameter.create(cnx, nodeId, 5, 1000, default_queue_id);
+            DeploymentParameter poller = DeploymentParameter.create(cnx, nodeId, default_queue_id);
+
+            ResourceManagerDto localRm = new ResourceManagerDto();
+            localRm.setDescription("Thread counter for queue " + default_queue_id);
+            localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
+            localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", "5");
+            localRm.setId(poller.getId());
+            MetaService.upsertResourceManager(cnx, localRm);
+
+            ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
+            cfg.setPollerId(poller.getId());
+            cfg.setResourceManagerId(localRm.getId());
+            MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
 
             cnx.commit();
         }
@@ -525,8 +540,7 @@ final class Helpers
             for (DeploymentParameter dp : dps)
             {
                 String q = cnx.runSelectSingle("q_select_by_id", String.class, dp.getQueue()); // TODO: avoid this query with a join.
-                jqmlogger.info(
-                        "\t" + q + " - every " + dp.getPollingInterval() + "ms - maximum " + dp.getNbThread() + " concurrent threads");
+                jqmlogger.info("\t" + q);
             }
 
             // Some technical data from the JVM hosting the node

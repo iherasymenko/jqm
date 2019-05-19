@@ -21,18 +21,17 @@ package com.enioka.jqm.tools;
 import java.util.Calendar;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.enioka.jqm.api.JobRequest;
 import com.enioka.jqm.api.JqmClientFactory;
 import com.enioka.jqm.api.Query;
 import com.enioka.jqm.api.Query.Sort;
-import com.enioka.jqm.model.DeploymentParameter;
-import com.enioka.jqm.model.Queue;
 import com.enioka.jqm.api.State;
+import com.enioka.jqm.model.Queue;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class HighlanderTest extends JqmBaseTest
 {
@@ -142,8 +141,8 @@ public class HighlanderTest extends JqmBaseTest
     public void testHighlanderMultiNodeBug195() throws Exception
     {
         int q = Queue.create(cnx, "q", "test queue", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 1, 1, q);
-        DeploymentParameter.create(cnx, TestHelpers.nodeMix.getId(), 1, 1, q);
+        createThreadLimitedPoller(TestHelpers.node.getId(), q, 1);
+        createThreadLimitedPoller(TestHelpers.nodeMix.getId(), q, 1);
 
         CreationTools.createJobDef(null, true, "pyl.KillMe", null, "jqm-tests/jqm-test-pyl/target/test.jar", q, 42, "WithH", null,
                 "Franquin", "WithH", "other", "other", true, cnx);

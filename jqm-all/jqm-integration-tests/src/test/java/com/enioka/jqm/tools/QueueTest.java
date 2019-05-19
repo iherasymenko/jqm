@@ -10,7 +10,6 @@ import com.enioka.jqm.api.JqmClientFactory;
 import com.enioka.jqm.api.JqmInvalidRequestException;
 import com.enioka.jqm.api.Query;
 import com.enioka.jqm.api.State;
-import com.enioka.jqm.model.DeploymentParameter;
 import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.Queue;
 import com.enioka.jqm.test.helpers.CreationTools;
@@ -29,7 +28,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Only 3 threads
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 3, 1, qId);
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 3);
 
         CreationTools.createJobDef(null, true, "pyl.KillMe", null, "jqm-tests/jqm-test-pyl/target/test.jar", qId, 42, "jqm-test-kill", null,
                 "Franquin", "ModuleMachin", "other", "other", false, cnx);
@@ -77,7 +76,8 @@ public class QueueTest extends JqmBaseTest
     {
         // Only 3 threads, one poll every hour
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 3, 3600000, qId);
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 3);
+        Helpers.setSingleParam("schedulerPollingPeriodMs", "3600000", cnx);
 
         CreationTools.createJobDef(null, true, "pyl.KillMe", null, "jqm-tests/jqm-test-pyl/target/test.jar", qId, 42, "jqm-test-kill", null,
                 "Franquin", "ModuleMachin", "other", "other", false, cnx);
@@ -133,7 +133,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 1, 1, qId);
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 1);
 
         CreationTools.createJobDef(null, true, "pyl.Wait", null, "jqm-tests/jqm-test-pyl-nodep/target/test.jar", qId, 42, "jqm-test-wait",
                 null, "Franquin", "ModuleMachin", "other", "other", false, cnx);
@@ -164,7 +164,7 @@ public class QueueTest extends JqmBaseTest
     public void testPriorityLimits()
     {
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 1, 1, qId);
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 1);
 
         CreationTools.createJobDef(null, true, "pyl.Wait", null, "jqm-tests/jqm-test-pyl-nodep/target/test.jar", qId, 42, "jqm-test-wait",
                 null, "Franquin", "ModuleMachin", "other", "other", false, cnx);
@@ -179,7 +179,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 1, 1, qId);
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 1);
 
         CreationTools.createJobDef(null, true, "pyl.Wait", null, "jqm-tests/jqm-test-pyl-nodep/target/test.jar", qId, 42, "jqm-test-wait",
                 null, "Franquin", "ModuleMachin", "other", "other", false, cnx);
@@ -210,7 +210,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 2, 1, qId); // 2 slots
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 2);
 
         Map<String, String> prms = new HashMap<>(1);
         prms.put("com.enioka.jqm.rm.quantity.thread.consumption", "2"); // using fully qualified RM with RM name 'thread' - not the generic
@@ -247,7 +247,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Single thread available.
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 2, 1, qId); // 2 slots
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 2);
 
         Map<String, String> prms = new HashMap<>(1);
         prms.put("com.enioka.jqm.rm.quantity.thread.consumption", "2");
@@ -278,7 +278,7 @@ public class QueueTest extends JqmBaseTest
     {
         // Create queue
         int qId = Queue.create(cnx, "testqueue", " ", false);
-        DeploymentParameter.create(cnx, TestHelpers.node.getId(), 40, 1, qId); // 40 threads, so not the limiting factor.
+        createThreadLimitedPoller(TestHelpers.node.getId(), qId, 40); // 40 threads, so not the limiting factor.
 
         // Enable the global discrete RM.
         GlobalParameter.setParameter(cnx, "discreteRmName", "ports");

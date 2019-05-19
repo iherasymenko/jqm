@@ -65,22 +65,19 @@ class DbImplBase
         queries.put("q_select_by_id", "SELECT ID, DEFAULT_QUEUE, DESCRIPTION, NAME FROM __T__QUEUE WHERE ID=?");
         
         // DEPLOYMENT
-        queries.put("dp_insert", "INSERT INTO __T__QUEUE_NODE_MAPPING(ID, ENABLED, LAST_MODIFIED, MAX_THREAD, POLLING_INTERVAL, NODE, QUEUE) VALUES(JQM_PK.nextval, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)");
+        queries.put("dp_insert", "INSERT INTO __T__QUEUE_NODE_MAPPING(ID, ENABLED, LAST_MODIFIED, NODE, QUEUE) VALUES(JQM_PK.nextval, ?, CURRENT_TIMESTAMP, ?, ?)");
         queries.put("dp_delete_all", "DELETE FROM __T__QUEUE_NODE_MAPPING");
         queries.put("dp_delete_for_node", "DELETE FROM __T__QUEUE_NODE_MAPPING WHERE NODE=?");
         queries.put("dp_delete_for_queue", "DELETE FROM __T__QUEUE_NODE_MAPPING WHERE QUEUE=?");
         queries.put("dp_delete_by_id", "DELETE FROM __T__QUEUE_NODE_MAPPING WHERE ID=?");
         queries.put("dp_update_interval_by_id", "UPDATE __T__QUEUE_NODE_MAPPING SET POLLING_INTERVAL=? WHERE ID=?");
         queries.put("dp_update_enable_by_queue_id", "UPDATE __T__QUEUE_NODE_MAPPING SET ENABLED=? WHERE QUEUE=?");
-        queries.put("dp_update_threads_by_id", "UPDATE __T__QUEUE_NODE_MAPPING SET MAX_THREAD=? WHERE ID=?");
-        queries.put("dp_update_changed_by_id", "UPDATE __T__QUEUE_NODE_MAPPING SET ENABLED=?, LAST_MODIFIED=CURRENT_TIMESTAMP, MAX_THREAD=?, POLLING_INTERVAL=?, NODE=?, QUEUE=? WHERE ID=? AND NOT "
-                + "(ENABLED=? AND MAX_THREAD=? AND POLLING_INTERVAL=? AND NODE=? AND QUEUE=?)");
-        queries.put("dp_select_by_id", "SELECT ID, ENABLED, LAST_MODIFIED, MAX_THREAD, POLLING_INTERVAL, NODE, QUEUE FROM __T__QUEUE_NODE_MAPPING WHERE ID=?");
-        queries.put("dp_select_for_node", "SELECT ID, ENABLED, LAST_MODIFIED, MAX_THREAD, POLLING_INTERVAL, NODE, QUEUE FROM __T__QUEUE_NODE_MAPPING WHERE NODE=?");
+        queries.put("dp_update_changed_by_id", "UPDATE __T__QUEUE_NODE_MAPPING SET ENABLED=?, LAST_MODIFIED=CURRENT_TIMESTAMP, NODE=?, QUEUE=? WHERE ID=? AND NOT "
+                + "(ENABLED=? AND NODE=? AND QUEUE=?)");
+        queries.put("dp_select_by_id", "SELECT ID, ENABLED, LAST_MODIFIED, NODE, QUEUE FROM __T__QUEUE_NODE_MAPPING WHERE ID=?");
+        queries.put("dp_select_for_node", "SELECT ID, ENABLED, LAST_MODIFIED, NODE, QUEUE FROM __T__QUEUE_NODE_MAPPING WHERE NODE=?");
         queries.put("dp_select_count_for_node", "SELECT COUNT(1) FROM __T__QUEUE_NODE_MAPPING WHERE NODE=?");
-        queries.put("dp_select_enabled_for_queue", "SELECT ENABLED, MAX_THREAD FROM __T__QUEUE_NODE_MAPPING WHERE QUEUE=?");
-        queries.put("dp_select_sum_queue_capacity", "SELECT SUM(dp.MAX_THREAD) FROM __T__QUEUE_NODE_MAPPING dp LEFT JOIN __T__NODE n ON n.ID = dp.NODE WHERE dp.ENABLED = true AND n.ENABLED = true AND dp.QUEUE = ?");
-        queries.put("dp_select_all_with_names", "SELECT dp.ID, dp.ENABLED, dp.LAST_MODIFIED, dp.MAX_THREAD, dp.POLLING_INTERVAL, dp.NODE, dp.QUEUE, n.NAME, q.NAME FROM __T__QUEUE_NODE_MAPPING dp LEFT JOIN __T__NODE n ON n.ID=dp.NODE LEFT JOIN __T__QUEUE q ON q.ID=dp.QUEUE ");
+        queries.put("dp_select_all_with_names", "SELECT dp.ID, dp.ENABLED, dp.LAST_MODIFIED, dp.NODE, dp.QUEUE, n.NAME, q.NAME FROM __T__QUEUE_NODE_MAPPING dp LEFT JOIN __T__NODE n ON n.ID=dp.NODE LEFT JOIN __T__QUEUE q ON q.ID=dp.QUEUE ");
         queries.put("dp_select_with_names_by_id", queries.get("dp_select_all_with_names") + " WHERE dp.ID=?");
         queries.put("dp_select_with_names_by_node_id", queries.get("dp_select_all_with_names") + " WHERE dp.NODE=?");
         
@@ -230,8 +227,8 @@ class DbImplBase
         queries.put("history_delete_all", "DELETE FROM __T__HISTORY");
         queries.put("history_delete_by_id", "DELETE FROM __T__HISTORY WHERE ID=?");
         queries.put("history_select_count_all", "SELECT COUNT(1) FROM __T__HISTORY");
-        queries.put("history_select_count_for_poller", "SELECT COUNT(1) FROM __T__HISTORY WHERE QUEUE=? AND NODE=?");
-        queries.put("history_select_count_last_mn_for_poller", "SELECT COUNT(1)/60 FROM __T__HISTORY WHERE QUEUE=? AND NODE=? AND DATE_END > (CURRENT_TIMESTAMP - 1 MINUTE)");
+        queries.put("history_select_count_for_node", "SELECT COUNT(1) FROM __T__HISTORY WHERE NODE=?");
+        queries.put("history_select_count_last_mn_for_node", "SELECT COUNT(1)/60 FROM __T__HISTORY WHERE QUEUE=? AND DATE_END > (CURRENT_TIMESTAMP - 1 MINUTE)");
         queries.put("history_select_count_ended", "SELECT COUNT(1) FROM __T__HISTORY WHERE STATUS='ENDED'");
         queries.put("history_select_count_notended", "SELECT COUNT(1) FROM __T__HISTORY WHERE STATUS<>'ENDED'");
         queries.put("history_select_reenqueue_by_id", "SELECT JD_APPLICATION, JD_KEY, EMAIL, INSTANCE_KEYWORD1, INSTANCE_KEYWORD2, INSTANCE_KEYWORD3, INSTANCE_MODULE, PARENT, SESSION_KEY, USERNAME, STATUS FROM __T__HISTORY WHERE ID=?");

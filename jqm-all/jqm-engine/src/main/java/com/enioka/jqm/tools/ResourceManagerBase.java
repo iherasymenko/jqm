@@ -6,7 +6,6 @@ import java.util.Map;
 import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.model.JobInstance;
-import com.enioka.jqm.model.ResourceManager;
 
 /**
  * Base class for all resource managers (RM). RMs are responsible for deciding if a given {@link com.enioka.jqm.model.State#SUBMITTED}

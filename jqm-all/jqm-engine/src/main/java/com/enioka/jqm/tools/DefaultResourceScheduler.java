@@ -1,5 +1,6 @@
 package com.enioka.jqm.tools;
 
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -12,6 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import com.enioka.admin.MetaService;
 import com.enioka.api.admin.ResourceManagerDto;
@@ -32,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The default scheduler aims first at fairness, then wait time, and only then throughput. It is fully described inside the documentation.
  */
-class DefaultResourceScheduler implements Runnable, IScheduler
+class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceSchedulerMBean
 {
     private static Logger jqmlogger = LoggerFactory.getLogger(DefaultResourceScheduler.class);
 
@@ -89,6 +94,9 @@ class DefaultResourceScheduler implements Runnable, IScheduler
     private Thread localThread = null;
     private Semaphore loop = new Semaphore(0);
     private Calendar lastLoop = null;
+
+    // JMX
+    private ObjectName name = null;
 
     DefaultResourceScheduler(DbConn cnx, Node localNode, JqmEngine engine, ResourceManagerManager rmm)
     {
@@ -306,7 +314,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler
                 continue;
             }
 
-            // TODO: bulk load parameters
             ji = queue.newInstances.get(tour);
             ji.loadPrmCache(cnx);
 
@@ -350,6 +357,8 @@ class DefaultResourceScheduler implements Runnable, IScheduler
 
     private void launch(DbConn cnx, JobInstance ji)
     {
+        actualNbThread.incrementAndGet();
+
         // Actually set it for running on this node and report it on the in-memory object.
         QueryResult qr = cnx.runUpdate("ji_update_status_by_id", localNode.getId(), ji.getId());
         if (qr.nbUpdated != 1)
@@ -361,14 +370,13 @@ class DefaultResourceScheduler implements Runnable, IScheduler
         ji.setNode(localNode);
         ji.setState(State.ATTRIBUTED);
 
-        // Commit taking possession of the JI (as well as anything whih may have been done inside the RMs)
+        // Commit taking possession of the JI (as well as anything which may have been done inside the RMs)
         cnx.commit();
 
         // We will run this JI!
         jqmlogger.trace("JI number {} will be run by this scheduler this loop", ji.getId());
         if (ji.getJD().getMaxTimeRunning() != null)
         {
-            // TODO: peremption.
             this.peremption.put(ji.getId(), new Date((new Date()).getTime() + ji.getJD().getMaxTimeRunning() * 60 * 1000));
         }
 
@@ -376,12 +384,10 @@ class DefaultResourceScheduler implements Runnable, IScheduler
         if (!ji.getJD().isExternal())
         {
             this.runningJobInstanceManager.startNewJobInstance(ji, this, this.engine);
-            actualNbThread.incrementAndGet();
         }
         else
         {
-            // TODO - allow external launch with scheduler instead of poller.
-            // (new Thread(new RunningExternalJobInstance(cnx, ji, this))).start();
+            (new Thread(new RunningExternalJobInstance(cnx, ji, this))).start();
         }
     }
 
@@ -440,6 +446,8 @@ class DefaultResourceScheduler implements Runnable, IScheduler
         this.localThread = Thread.currentThread();
         this.localThread.setName("SCHEDULER;polling;");
         DbConn cnx = null;
+
+        registerMBean();
 
         while (true)
         {
@@ -521,7 +529,7 @@ class DefaultResourceScheduler implements Runnable, IScheduler
             {
                 try
                 {
-                    // ManagementFactory.getPlatformMBeanServer().unregisterMBean(name);
+                    ManagementFactory.getPlatformMBeanServer().unregisterMBean(name);
                 }
                 catch (Exception e)
                 {
@@ -553,7 +561,7 @@ class DefaultResourceScheduler implements Runnable, IScheduler
         {
             jqmlogger.trace("Waiting the end of {} job(s)", actualNbThread);
 
-            if (actualNbThread.get() == 0)
+            if (actualNbThread.get() <= 0)
             {
                 break;
             }
@@ -576,7 +584,102 @@ class DefaultResourceScheduler implements Runnable, IScheduler
         }
         if (timeWaitedMs > timeOutMs)
         {
-            jqmlogger.warn("Some job instances did not finish in time - they will be killed for the poller to be able to stop");
+            jqmlogger.warn("Some job instances did not finish in time - they will be killed for the scheduler to be able to stop");
         }
+    }
+
+    ////////////////////////////////////////////////////////////
+    // JMX
+    ////////////////////////////////////////////////////////////
+
+    private void registerMBean()
+    {
+        try
+        {
+            if (this.engine.loadJmxBeans)
+            {
+                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                name = new ObjectName("com.enioka.jqm:type=Node.Scheduler,Node=" + this.engine.getNode().getName() + ",name=Default");
+
+                // Unregister MBean if it already exists. This may happen during frequent DP modifications.
+                try
+                {
+                    mbs.getMBeanInfo(name);
+                    mbs.unregisterMBean(name);
+                }
+                catch (InstanceNotFoundException e)
+                {
+                    // Nothing to do, this should be the normal case.
+                }
+
+                mbs.registerMBean(this, name);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new JqmInitError("Could not create JMX beans", e);
+        }
+    }
+
+    @Override
+    public long getCumulativeJobInstancesCount()
+    {
+        DbConn em2 = Helpers.getNewDbSession();
+        try
+        {
+            return em2.runSelectSingle("history_select_count_for_node", Long.class, this.localNode.getId());
+        }
+        finally
+        {
+            Helpers.closeQuietly(em2);
+        }
+    }
+
+    @Override
+    public float getJobsFinishedPerSecondLastMinute()
+    {
+        DbConn em2 = Helpers.getNewDbSession();
+        try
+        {
+            return em2.runSelectSingle("history_select_count_last_mn_for_node", Float.class, this.localNode.getId());
+        }
+        finally
+        {
+            Helpers.closeQuietly(em2);
+        }
+    }
+
+    @Override
+    public long getCurrentlyRunningJobCount()
+    {
+        return this.actualNbThread.get();
+    }
+
+    @Override
+    public Integer getCurrentActiveThreadCount()
+    {
+        return actualNbThread.get();
+    }
+
+    @Override
+    public boolean isActuallyPolling()
+    {
+        // 1000ms is a rough estimate of the time taken to do the actual poll. If it's more, there is a huge issue elsewhere.
+        return (Calendar.getInstance().getTimeInMillis() - this.lastLoop.getTimeInMillis()) <= pollingInterval + 1000;
+    }
+
+    @Override
+    public int getLateJobs()
+    {
+        int i = 0;
+        Date now = new Date();
+        for (Date d : this.peremption.values())
+        {
+            if (now.after(d))
+            {
+                i++;
+            }
+        }
+        return i;
     }
 }

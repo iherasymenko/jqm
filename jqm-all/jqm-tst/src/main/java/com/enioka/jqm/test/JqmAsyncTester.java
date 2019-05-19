@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.io.FilenameUtils;
-import org.hsqldb.Server;
-import org.hsqldb.jdbc.JDBCDataSource;
-
+import com.enioka.admin.MetaService;
+import com.enioka.api.admin.QueueMappingDto;
+import com.enioka.api.admin.ResourceManagerDto;
+import com.enioka.api.admin.ResourceManagerPollerMappingDto;
 import com.enioka.jqm.api.Deliverable;
 import com.enioka.jqm.api.JobInstance;
 import com.enioka.jqm.api.JobRequest;
@@ -25,12 +25,15 @@ import com.enioka.jqm.api.Query;
 import com.enioka.jqm.api.State;
 import com.enioka.jqm.jdbc.Db;
 import com.enioka.jqm.jdbc.DbConn;
-import com.enioka.jqm.model.DeploymentParameter;
 import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.Node;
 import com.enioka.jqm.model.Queue;
 import com.enioka.jqm.tools.JqmEngineFactory;
 import com.enioka.jqm.tools.JqmEngineOperations;
+
+import org.apache.commons.io.FilenameUtils;
+import org.hsqldb.Server;
+import org.hsqldb.jdbc.JDBCDataSource;
 
 /**
  * An asynchronous tester for JQM payloads. It allows to configure and start one or more embedded JQM engines and run payloads against them.
@@ -41,7 +44,7 @@ import com.enioka.jqm.tools.JqmEngineOperations;
  * the web services are not loaded, the file retrieval methods of these APIs will not work, so the tester provides a
  * {@link #getDeliverableContent(Deliverable)} method to compensate. The tester also provides a few helper methods (accelerators) that
  * encapsulate the client API.<br>
- * 
+ *
  * If using resources (JNDI), they must be put inside a resource.xml file at the root of class loader search.<br>
  * Note that tester instances are not thread safe.
  */
@@ -122,9 +125,9 @@ public class JqmAsyncTester
     /**
      * Create a new node. It is not started by this method.<br>
      * This must be called before starting the tester.
-     * 
+     *
      * @param nodeName
-     *            the name of the node. Must be unique.
+     *                     the name of the node. Must be unique.
      */
     public JqmAsyncTester addNode(String nodeName)
     {
@@ -147,9 +150,9 @@ public class JqmAsyncTester
 
     /**
      * Changes the log level of existing and future nodes.
-     * 
+     *
      * @param level
-     *            TRACE, DEBUG, INFO, WARNING, ERROR (or anything, which is interpreted as INFO)
+     *                  TRACE, DEBUG, INFO, WARNING, ERROR (or anything, which is interpreted as INFO)
      */
     public JqmAsyncTester setNodesLogLevel(String level)
     {
@@ -164,9 +167,9 @@ public class JqmAsyncTester
      * this.<br>
      * The first queue created is considered to be the default queue.<br>
      * This must be called before starting the engines.
-     * 
+     *
      * @param name
-     *            must be unique.
+     *                 must be unique.
      */
     public JqmAsyncTester addQueue(String name)
     {
@@ -187,7 +190,7 @@ public class JqmAsyncTester
      * Set one or more nodes to poll a queue for new job instances.<br>
      * This must be called before starting the engines.
      */
-    public JqmAsyncTester deployQueueToNode(String queueName, int maxJobsRunning, int pollingIntervallMs, String... nodeName)
+    public JqmAsyncTester deployQueueToNode(String queueName, int maxJobsRunning, int pollingIntervalMs, String... nodeName)
     {
         if (hasStarted)
         {
@@ -196,7 +199,23 @@ public class JqmAsyncTester
 
         for (String name : nodeName)
         {
-            DeploymentParameter.create(cnx, nodes.get(name).getId(), maxJobsRunning, pollingIntervallMs, queues.get(queueName));
+            QueueMappingDto poller = new QueueMappingDto();
+            poller.setNodeId(nodes.get(name).getId());
+            poller.setQueueId(queues.get(queueName));
+            MetaService.upsertQueueMapping(cnx, poller);
+
+            ResourceManagerDto localRm = new ResourceManagerDto();
+            localRm.setDescription("Thread counter for queue " + queues.get(queueName));
+            localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
+            localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", "" + maxJobsRunning);
+            localRm.setId(poller.getId());
+            MetaService.upsertResourceManager(cnx, localRm);
+
+            ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
+            cfg.setPollerId(poller.getId());
+            cfg.setResourceManagerId(localRm.getId());
+            MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
+
             cnx.commit();
         }
 
@@ -229,9 +248,9 @@ public class JqmAsyncTester
      * The job description and name will be the class name (simple name, not the fully qualified name).<br>
      * If you need further customisation, directly create your {@link TestJobDefinition} and call
      * {@link #addJobDefinition(TestJobDefinition)} instead of using this method.
-     * 
+     *
      * @param classToRun
-     *            a class present inside the class path which should be launched by JQM.
+     *                       a class present inside the class path which should be launched by JQM.
      * @return the tester itself to allow fluid API behaviour.
      */
     public JqmAsyncTester addSimpleJobDefinitionFromClasspath(Class<? extends Object> classToRun)
@@ -246,13 +265,13 @@ public class JqmAsyncTester
      * The job description and name will be identical<br>
      * If you need further customisation, directly create your {@link TestJobDefinition} and call
      * {@link #addJobDefinition(TestJobDefinition)} instead of using this method.
-     * 
+     *
      * @param name
-     *            name of the new job definition (as used in the enqueue methods)
+     *                      name of the new job definition (as used in the enqueue methods)
      * @param className
-     *            the full canonical name of the the class to run inside the jar
+     *                      the full canonical name of the the class to run inside the jar
      * @param jarPath
-     *            path to the jar. Relative to current directory.
+     *                      path to the jar. Relative to current directory.
      * @return the tester itself to allow fluid API behaviour.
      */
     public JqmAsyncTester addSimpleJobDefinitionFromLibrary(String name, String className, String jarPath)
@@ -297,7 +316,7 @@ public class JqmAsyncTester
 
     /**
      * Helper method to enqueue a new launch request. Simple JqmClientFactory.getClient().enqueue wrapper.
-     * 
+     *
      * @return the request ID.
      */
     public int enqueue(String name)
@@ -307,14 +326,14 @@ public class JqmAsyncTester
 
     /**
      * Wait for a given amount of ended job instances (OK or KO).
-     * 
+     *
      * @param nbResult
-     *            the expected result count
+     *                             the expected result count
      * @param timeoutMs
-     *            give up after this (throws a RuntimeException)
+     *                             give up after this (throws a RuntimeException)
      * @param waitAdditionalMs
-     *            after reaching the expected nbResult count, wait a little more (for example to ensure there is no additonal unwanted
-     *            launch). Will usually be zero.
+     *                             after reaching the expected nbResult count, wait a little more (for example to ensure there is no
+     *                             additonal unwanted launch). Will usually be zero.
      */
     public void waitForResults(int nbResult, int timeoutMs, int waitAdditionalMs)
     {
@@ -333,11 +352,11 @@ public class JqmAsyncTester
     /**
      * Wait for a given amount of ended job instances (OK or KO). Shortcut for {@link #waitForResults(int, int, int)} with 0ms of additional
      * wait time.
-     * 
+     *
      * @param nbResult
-     *            the expected result count
+     *                      the expected result count
      * @param timeoutMs
-     *            give up after this (throws a RuntimeException)
+     *                      give up after this (throws a RuntimeException)
      */
     public void waitForResults(int nbResult, int timeoutMs)
     {
@@ -392,7 +411,7 @@ public class JqmAsyncTester
 
     /**
      * Removes all job instances from the queues and the history.
-     * 
+     *
      * @param em
      */
     public void cleanupOperationalDbData()
@@ -407,7 +426,7 @@ public class JqmAsyncTester
 
     /**
      * Deletes all job definitions. This calls {@link #cleanupOperationalDbData()}
-     * 
+     *
      * @param em
      */
     public void cleanupAllJobDefinitions()
@@ -484,7 +503,7 @@ public class JqmAsyncTester
      * Version of {@link JqmClient#getDeliverableContent(Deliverable)} which does not require the web service APIs to be enabled to work.
      * Also, returned files do not self-destruct on stream close.<br>
      * See the javadoc of the original method for details.
-     * 
+     *
      * @throws FileNotFoundException
      */
     public InputStream getDeliverableContent(Deliverable file) throws FileNotFoundException

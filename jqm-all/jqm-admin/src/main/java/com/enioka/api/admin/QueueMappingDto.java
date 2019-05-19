@@ -29,8 +29,6 @@ public class QueueMappingDto implements Serializable
 
     private Integer id;
     private Integer nodeId;
-    private Integer nbThread;
-    private Integer pollingInterval;
     private Integer queueId;
     private String nodeName, queueName;
     private Boolean enabled = true;
@@ -53,26 +51,6 @@ public class QueueMappingDto implements Serializable
     public void setNodeId(Integer nodeId)
     {
         this.nodeId = nodeId;
-    }
-
-    public Integer getNbThread()
-    {
-        return nbThread;
-    }
-
-    public void setNbThread(Integer nbThread)
-    {
-        this.nbThread = nbThread;
-    }
-
-    public Integer getPollingInterval()
-    {
-        return pollingInterval;
-    }
-
-    public void setPollingInterval(Integer pollingInterval)
-    {
-        this.pollingInterval = pollingInterval;
     }
 
     public Integer getQueueId()

@@ -362,7 +362,6 @@ public class XmlTest extends JqmBaseTest
             }
         }
         Assert.assertNotNull(queueMapping);
-        Assert.assertEquals((Integer) 2000, queueMapping.getPollingInterval());
 
         QueueDto q = MetaService.getQueue(cnx, queueMapping.getQueueId());
         Assert.assertTrue(q.isDefaultQueue());
@@ -416,7 +415,6 @@ public class XmlTest extends JqmBaseTest
             }
         }
         Assert.assertNotNull(queueMapping);
-        Assert.assertEquals((Integer) 5000, queueMapping.getPollingInterval());
 
         q = MetaService.getQueue(cnx, queueMapping.getQueueId());
         Assert.assertFalse(q.isDefaultQueue());

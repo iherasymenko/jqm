@@ -38,13 +38,13 @@ class CommandInstallNodeTemplate extends CommandBase
                 {
                     QueueMappingDto r = new QueueMappingDto();
                     r.setEnabled(mapping.getEnabled());
-                    r.setNbThread(mapping.getNbThread());
                     r.setNodeId(target.getId());
                     r.setNodeName(target.getName());
-                    r.setPollingInterval(mapping.getPollingInterval());
                     r.setQueueId(mapping.getQueueId());
                     r.setQueueName(mapping.getQueueName());
                     toAdd.add(r);
+
+                    // TODO: copy RM deployments too (once we have a global/local boolean)
                 }
                 if (mapping.getNodeId().equals(target.getId()))
                 {

@@ -69,10 +69,10 @@ public class MetaService
         }
 
         cnx.runUpdate("globalprm_delete_all");
-        cnx.runUpdate("dp_delete_all");
         cnx.runUpdate("rmmn_delete_all");
         cnx.runUpdate("rmmp_delete_all");
         cnx.runUpdate("rm_delete_all");
+        cnx.runUpdate("dp_delete_all");
         cnx.runUpdate("sjprm_delete_all");
         cnx.runUpdate("sj_delete_all");
         cnx.runUpdate("jdprm_delete_all");
@@ -1044,12 +1044,10 @@ public class MetaService
             tmp.setId(rs.getInt(1 + colShift));
             tmp.setEnabled(rs.getBoolean(2 + colShift));
 
-            tmp.setNbThread(rs.getInt(4 + colShift));
-            tmp.setPollingInterval(rs.getInt(5 + colShift));
-            tmp.setNodeId(rs.getInt(6 + colShift));
-            tmp.setQueueId(rs.getInt(7 + colShift));
-            tmp.setNodeName(rs.getString(8 + colShift));
-            tmp.setQueueName(rs.getString(9 + colShift));
+            tmp.setNodeId(rs.getInt(4 + colShift));
+            tmp.setQueueId(rs.getInt(5 + colShift));
+            tmp.setNodeName(rs.getString(6 + colShift));
+            tmp.setQueueName(rs.getString(7 + colShift));
 
             return tmp;
         }
@@ -1121,13 +1119,13 @@ public class MetaService
     {
         if (dto.getId() != null)
         {
-            cnx.runUpdate("dp_update_changed_by_id", dto.getEnabled(), dto.getNbThread(), dto.getPollingInterval(), dto.getNodeId(),
-                    dto.getQueueId(), dto.getId(), dto.getEnabled(), dto.getNbThread(), dto.getPollingInterval(), dto.getNodeId(),
-                    dto.getQueueId());
+            cnx.runUpdate("dp_update_changed_by_id", dto.getEnabled(), dto.getNodeId(), dto.getQueueId(), dto.getId(), dto.getEnabled(),
+                    dto.getNodeId(), dto.getQueueId());
         }
         else
         {
-            DeploymentParameter.create(cnx, dto.getNodeId(), dto.getNbThread(), dto.getPollingInterval(), dto.getQueueId());
+            DeploymentParameter res = DeploymentParameter.create(cnx, dto.getNodeId(), dto.getQueueId());
+            dto.setId(res.getId());
         }
     }
 
