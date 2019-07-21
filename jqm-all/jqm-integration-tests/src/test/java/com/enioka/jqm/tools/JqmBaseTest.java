@@ -284,6 +284,21 @@ public class JqmBaseTest
         return poller.getId();
     }
 
+    public void addQuantityResourceManagerToPoller(String key, Integer quantity, int pollerId)
+    {
+        ResourceManagerDto localRm = new ResourceManagerDto();
+        localRm.setKey(key);
+        localRm.setDescription("Counter for poller " + pollerId);
+        localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
+        localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", quantity.toString());
+        MetaService.upsertResourceManager(cnx, localRm);
+
+        ResourceManagerPollerMappingDto cfg = new ResourceManagerPollerMappingDto();
+        cfg.setPollerId(pollerId);
+        cfg.setResourceManagerId(localRm.getId());
+        MetaService.upsertResourceManagerPollerMapping(cnx, cfg);
+    }
+
     public void addQuantityResourceManagerToNode(String key, Integer quantity, int nodeId)
     {
         ResourceManagerDto localRm = new ResourceManagerDto();
@@ -291,6 +306,19 @@ public class JqmBaseTest
         localRm.setDescription("Counter for node " + nodeId);
         localRm.setImplementation("com.enioka.jqm.tools.QuantityResourceManager");
         localRm.addParameter("com.enioka.jqm.rm.quantity.quantity", quantity.toString());
+        MetaService.upsertResourceManager(cnx, localRm);
+
+        ResourceManagerNodeMappingDto cfg = new ResourceManagerNodeMappingDto();
+        cfg.setNodeId(nodeId);
+        cfg.setResourceManagerId(localRm.getId());
+        MetaService.upsertResourceManagerNodeMapping(cnx, cfg);
+    }
+
+    public void addHighlanderResourceManagerToNode(int nodeId)
+    {
+        ResourceManagerDto localRm = new ResourceManagerDto();
+        localRm.setDescription("Global highlander manager for node " + nodeId);
+        localRm.setImplementation("com.enioka.jqm.tools.HighlanderResourceManager");
         MetaService.upsertResourceManager(cnx, localRm);
 
         ResourceManagerNodeMappingDto cfg = new ResourceManagerNodeMappingDto();

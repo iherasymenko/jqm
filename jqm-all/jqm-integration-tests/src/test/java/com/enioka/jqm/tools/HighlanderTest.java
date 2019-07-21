@@ -38,6 +38,11 @@ public class HighlanderTest extends JqmBaseTest
     @Test
     public void testHighlanderMultiNode() throws Exception
     {
+        addHighlanderResourceManagerToNode(TestHelpers.node.getId());
+        addHighlanderResourceManagerToNode(TestHelpers.nodeMix.getId());
+        addQuantityResourceManagerToPoller("thread", 10, TestHelpers.dpVip.getId());
+        addQuantityResourceManagerToPoller("thread", 10, TestHelpers.dpVipMix.getId());
+
         CreationTools.createJobDef(null, true, "pyl.EngineApiSendMsg", null, "jqm-tests/jqm-test-pyl/target/test.jar", TestHelpers.qVip, 42,
                 "MarsuApplication", null, "Franquin", "ModuleMachin", "other", "other", true, cnx);
 
@@ -54,7 +59,8 @@ public class HighlanderTest extends JqmBaseTest
         {
             JqmClientFactory.getClient().enqueue(j);
         }
-        TestHelpers.waitFor(20, 5000, cnx); // Actually wait.
+        TestHelpers.waitFor(2, 50000, cnx);
+        sleep(5); // Actually wait.
 
         Assert.assertEquals(0, TestHelpers.getNonOkCount(cnx));
 
@@ -77,8 +83,9 @@ public class HighlanderTest extends JqmBaseTest
     }
 
     @Test
-    public void testHighlanderenqueueEngineDead() throws Exception
+    public void testHighlanderEnqueueEngineDead() throws Exception
     {
+        addHighlanderResourceManagerToNode(TestHelpers.node.getId());
         CreationTools.createJobDef(null, true, "App", null, "jqm-tests/jqm-test-datetimemaven/target/test.jar", TestHelpers.qVip, 42,
                 "MarsuApplication", null, "Franquin", "ModuleMachin", "other", "other", true, cnx);
         JobRequest j = new JobRequest("MarsuApplication", "TestUser");
@@ -95,6 +102,8 @@ public class HighlanderTest extends JqmBaseTest
     @Test
     public void testHighlanderEngineRunning() throws Exception
     {
+        addHighlanderResourceManagerToNode(TestHelpers.node.getId());
+
         // This test launches an infinite loop as Highlander, checks if no other job can launch. Job is killed at the end - which allows a
         // second one to run, which also has to be killed.
         CreationTools.createJobDef(null, true, "pyl.KillMe", null, "jqm-tests/jqm-test-pyl/target/test.jar", TestHelpers.qVip, 42, "kill",
@@ -124,6 +133,7 @@ public class HighlanderTest extends JqmBaseTest
     @Test
     public void testHighlanderModeMultiQueue() throws Exception
     {
+        addHighlanderResourceManagerToNode(TestHelpers.node.getId());
         CreationTools.createJobDef(null, true, "App", null, "jqm-tests/jqm-test-datetimemaven/target/test.jar", TestHelpers.qVip, 42,
                 "MarsuApplication", null, "Franquin", "ModuleMachin", "other", "other", true, cnx);
 
@@ -140,6 +150,9 @@ public class HighlanderTest extends JqmBaseTest
     @Test
     public void testHighlanderMultiNodeBug195() throws Exception
     {
+        addHighlanderResourceManagerToNode(TestHelpers.node.getId());
+        addHighlanderResourceManagerToNode(TestHelpers.nodeMix.getId());
+
         int q = Queue.create(cnx, "q", "test queue", false);
         createThreadLimitedPoller(TestHelpers.node.getId(), q, 1);
         createThreadLimitedPoller(TestHelpers.nodeMix.getId(), q, 1);
