@@ -358,6 +358,7 @@ class DbImplBase
         queries.put("rmmp_update_changed", "UPDATE __T__RM_POLLER_MAPPING SET RM=?, POLLER=?, LAST_MODIFIED=CURRENT_TIMESTAMP WHERE ID=? AND NOT (RM=? AND POLLER=?)");
         queries.put("rmmp_select_all", "SELECT ID, RM, POLLER, LAST_MODIFIED FROM __T__RM_POLLER_MAPPING");
         queries.put("rmmp_select_by_id", queries.get("rmmp_select_all") + " WHERE ID=?");
+        queries.put("rmmp_select_by_poller", queries.get("rmmp_select_all") + " WHERE POLLER=?");
 
         // CONFIGURATION PARAMETER
         queries.put("configprm_insert", "INSERT INTO __T__CONFIGURATION_PARAMETER(ID, ITEM, ITEM_TYPE, KEYNAME, CURRENT_VALUE) VALUES(JQM_PK.nextval, ?, ?, ?, ?)");

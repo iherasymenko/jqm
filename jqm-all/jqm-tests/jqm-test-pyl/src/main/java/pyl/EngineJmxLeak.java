@@ -35,6 +35,7 @@ public class EngineJmxLeak implements Runnable, EngineJmxLeakMBean
             catch (InterruptedException e)
             {
                 e.printStackTrace();
+                break;
             }
             jm.sendProgress(i);
             i++;

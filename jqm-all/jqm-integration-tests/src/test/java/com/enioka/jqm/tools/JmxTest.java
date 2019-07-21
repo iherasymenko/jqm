@@ -79,8 +79,8 @@ public class JmxTest extends JqmBaseTest
         {
             System.out.println(oi.getObjectName());
         }
-        Assert.assertTrue(mbeans.size() >= 5);
-        // 1 node, 3 pollers, 1 running instance, 1 JDBC pool. The pool may not be visible due to a call to resetSingletons.
+        Assert.assertTrue(mbeans.size() >= 3);
+        // 1 node, 1 poller, 1 running instance, 1 JDBC pool. The pool may not be visible due to a call to resetSingletons.
 
         // /////////////////
         // Loader beans
@@ -123,7 +123,7 @@ public class JmxTest extends JqmBaseTest
 
         // //////////////////
         // Poller bean
-        ObjectName poller = new ObjectName("com.enioka.jqm:type=Node.Queue,Node=" + TestHelpers.node.getName() + ",name=VIPQueue");
+        ObjectName poller = new ObjectName("com.enioka.jqm:type=Node.Scheduler,Node=" + TestHelpers.node.getName() + ",name=Default");
         DefaultResourceSchedulerMBean proxyPoller = JMX.newMBeanProxy(mbsc, poller, DefaultResourceSchedulerMBean.class);
         Assert.assertEquals(1, proxyPoller.getCumulativeJobInstancesCount() + proxyPoller.getCurrentActiveThreadCount());
         proxyPoller.getCurrentlyRunningJobCount();

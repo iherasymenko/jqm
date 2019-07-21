@@ -57,9 +57,9 @@ public class MetaService
      * No commit performed.
      *
      * @param cnx
-     *                  database session to use. Not committed.
+     *            database session to use. Not committed.
      * @param force
-     *                  set to true if you want to delete metadata even if there is still transactional data depending on it.
+     *            set to true if you want to delete metadata even if there is still transactional data depending on it.
      */
     public static void deleteAllMeta(DbConn cnx, boolean force)
     {
@@ -1027,6 +1027,12 @@ public class MetaService
 
     public static void deleteQueueMapping(DbConn cnx, int id)
     {
+        // Linked items?
+        for (ResourceManagerPollerMappingDto rmm : getResourceManagerPollerMappings(cnx, "rmmp_select_by_poller", 0, id))
+        {
+            deleteResourceManagerPollerMapping(cnx, rmm.getId());
+        }
+
         QueryResult qr = cnx.runUpdate("dp_delete_by_id", id);
         if (qr.nbUpdated != 1)
         {

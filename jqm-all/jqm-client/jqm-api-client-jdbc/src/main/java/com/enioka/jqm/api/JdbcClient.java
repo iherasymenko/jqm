@@ -2115,28 +2115,7 @@ final class JdbcClient implements JqmClient
     @Override
     public int getQueueEnabledCapacity(com.enioka.jqm.api.Queue q)
     {
-        int capacity = 0;
-        DbConn cnx = null;
-        try
-        {
-            cnx = getDbSession();
-            ResultSet rs = cnx.runSelect("dp_select_sum_queue_capacity", q.getId());
-
-            while (rs.next())
-            {
-                capacity = rs.getInt(1);
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JqmClientException("could not query queue capacity around nodes", e);
-        }
-        finally
-        {
-            closeQuietly(cnx);
-        }
-
-        return capacity;
+       return 0;
     }
 
     // /////////////////////////////////////////////////////////////////////

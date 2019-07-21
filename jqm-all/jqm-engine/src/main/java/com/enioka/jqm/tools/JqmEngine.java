@@ -218,12 +218,9 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         runningJobInstanceManager = new RunningJobInstanceManager();
         runnerManager = new RunnerManager(cnx);
 
-        // Resource managers
-        // initResourceManagers(cnx);
-
-        // Pollers
-        // syncPollers(cnx, this.node);
-        initQueuePolling(cnx, this.node);
+        // Pollers (resource scheduler)
+        this.resourceManagerManager = new ResourceManagerManager(Helpers.getExtClassLoader());
+        this.resourceScheduler = new DefaultResourceScheduler(cnx, node, this, this.resourceManagerManager);
         Thread t = new Thread(resourceScheduler);
         t.start();
         jqmlogger.info("All required queues are now polled");
@@ -329,12 +326,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     Node getNode()
     {
         return this.node;
-    }
-
-    synchronized private void initQueuePolling(DbConn cnx, Node node)
-    {
-        this.resourceManagerManager = new ResourceManagerManager(Helpers.getExtClassLoader());
-        this.resourceScheduler = new DefaultResourceScheduler(cnx, node, this, this.resourceManagerManager);
     }
 
     /**

@@ -59,7 +59,7 @@ public class DbFailTest extends JqmBaseTest
     public void testDbTranscientFailure() throws Exception
     {
         // Set a real polling interval to allow the failure to be unseen by the poller
-        cnx.runUpdate("dp_update_interval_by_id", 3000, TestHelpers.dpVip.getId());
+        Helpers.setSingleParam("schedulerPollingPeriodMs", "3000", cnx);
         cnx.commit();
 
         this.addAndStartEngine();
@@ -116,8 +116,6 @@ public class DbFailTest extends JqmBaseTest
     public void testDbFailureUnderLoad() throws Exception
     {
         // Many starting jobs simultaneously
-        cnx.runUpdate("dp_update_threads_by_id", 50, TestHelpers.dpVip.getId());
-        cnx.commit();
         TestHelpers.setNodesLogLevel("INFO", cnx);
 
         CreationTools.createJobDef(null, true, "pyl.Nothing", null, "jqm-tests/jqm-test-pyl-nodep/target/test.jar", TestHelpers.qVip, -1,

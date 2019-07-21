@@ -99,9 +99,17 @@ public class JqmBaseTest
         JqmClientFactory.resetClient(null);
         cnx = getNewDbSession();
         TestHelpers.cleanup(cnx);
+        setUpConfigurationData();
+        cnx.commit();
+    }
+
+    protected void setUpConfigurationData()
+    {
         TestHelpers.createTestData(cnx);
         Helpers.setSingleParam("schedulerPollingPeriodMs", "1", cnx);
-        cnx.commit();
+        addQuantityResourceManagerToPoller("thread", 5, TestHelpers.dpVip.getId());
+        addQuantityResourceManagerToPoller("thread", 2, TestHelpers.dpNormal.getId());
+        addQuantityResourceManagerToPoller("thread", 1, TestHelpers.dpSlow.getId());
     }
 
     @After

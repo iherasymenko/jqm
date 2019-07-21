@@ -239,8 +239,7 @@ class XmlConfigurationParser
 
                     if (dp != null)
                     {
-                        cnx.runUpdate("dp_update_changed_by_id", enabled, maxThreads, pollingIntervalMs, nodeId, queueId, dp.getId(),
-                                enabled, maxThreads, pollingIntervalMs, nodeId, queueId);
+                        cnx.runUpdate("dp_update_changed_by_id", enabled, nodeId, queueId, dp.getId(), enabled, nodeId, queueId);
                     }
                     else
                     {

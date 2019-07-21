@@ -35,6 +35,7 @@ public class KillMe implements Runnable
             catch (InterruptedException e)
             {
                 e.printStackTrace();
+                break;
             }
             jm.sendProgress(i);
             i++;

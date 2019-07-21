@@ -18,17 +18,31 @@ package com.enioka.jqm.tools;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import com.enioka.admin.MetaService;
 import com.enioka.api.admin.ResourceManagerDto;
 import com.enioka.api.admin.ResourceManagerNodeMappingDto;
 import com.enioka.api.admin.ResourceManagerPollerMappingDto;
-import com.enioka.jqm.test.helpers.TestHelpers;
-
-import org.junit.Assert;
-import org.junit.Test;
+import com.enioka.jqm.model.DeploymentParameter;
+import com.enioka.jqm.model.Node;
+import com.enioka.jqm.model.Queue;
 
 public class MetaServiceTest extends JqmBaseTest
 {
+    int nodeId;
+    int dpId;
+
+    @Override
+    protected void setUpConfigurationData()
+    {
+        Node node = Node.create(cnx, "localhost", 0, "", "", "", "localhost", "DEBUG");
+        nodeId = node.getId();
+        int queueId = Queue.create(cnx, "VIPQueue", "Queue for the winners", true);
+        dpId = DeploymentParameter.create(cnx, node, 40, 1, queueId).getId();
+    }
+
     @Test
     public void testRMPersistence() throws Exception
     {
@@ -110,7 +124,7 @@ public class MetaServiceTest extends JqmBaseTest
 
         ResourceManagerNodeMappingDto rmm1 = new ResourceManagerNodeMappingDto();
         rmm1.setResourceManagerId(rm1.getId());
-        rmm1.setNodeId(TestHelpers.node.getId());
+        rmm1.setNodeId(nodeId);
         MetaService.upsertResourceManagerNodeMapping(cnx, rmm1);
 
         dtos = MetaService.getResourceManagerNodeMappings(cnx);
@@ -160,7 +174,7 @@ public class MetaServiceTest extends JqmBaseTest
 
         ResourceManagerPollerMappingDto rmp1 = new ResourceManagerPollerMappingDto();
         rmp1.setResourceManagerId(rm1.getId());
-        rmp1.setPollerId(TestHelpers.dpNormal.getId());
+        rmp1.setPollerId(dpId);
         MetaService.upsertResourceManagerPollerMapping(cnx, rmp1);
 
         dtos = MetaService.getResourceManagerPollerMappings(cnx);

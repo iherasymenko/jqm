@@ -17,7 +17,7 @@ public class ClLeakTest extends JqmBaseTest
     @Test
     public void testJmxLeak() throws Exception
     {
-        int i = JqmSimpleTest.create(cnx, "pyl.EngineJmxLeak").addWaitTime(10000).expectOk(0).run(this);
+        int i = JqmSimpleTest.create(cnx, "pyl.EngineJmxLeak").addWaitTime(100).expectOk(0).expectRunning(1).run(this);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         ObjectName name = new ObjectName("com.test:type=Node,name=test");

@@ -533,12 +533,13 @@ public interface JqmClient
     QueueStatus getQueueStatus(Queue q);
 
     /**
-     * Query capacity.
+     * Query capacity. Always returns 0. This method was added for tests and has no place in the client API.
      *
      * @param q
      *            the queue to query
      * @return sum of maximum parallel instances for the queue around the active nodes
      */
+    @Deprecated
     int getQueueEnabledCapacity(Queue q);
 
     // /////////////////////////////////////////////////////////////////////
