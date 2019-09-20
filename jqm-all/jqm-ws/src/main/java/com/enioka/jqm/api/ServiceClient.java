@@ -41,6 +41,8 @@ import org.slf4j.LoggerFactory;
 @Path("/client")
 public class ServiceClient implements JqmClient
 {
+    private static int restApiVersion = 1;
+
     static Logger log = LoggerFactory.getLogger(ServiceClient.class);
 
     private @Context HttpServletResponse res;
@@ -49,6 +51,14 @@ public class ServiceClient implements JqmClient
     public int enqueue(JobRequest jd)
     {
         throw new NotSupportedException();
+    }
+
+    @GET
+    @Path("version")
+    @Produces(MediaType.TEXT_PLAIN)
+    public int getRestApiVersion()
+    {
+        return this.restApiVersion;
     }
 
     @POST
