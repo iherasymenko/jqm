@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -134,10 +135,17 @@ public class Node implements Serializable
 
     /**
      * Directory holding the payload repository, i.e. all the jars that can be run by JQM.
+     * Can contains multiple directory separated by ':'
      */
-    public String getRepo()
+    public String getRepo() { return repo; }
+
+    /**
+     * @return a List of directory. Provided for convenience to manage multiple directories repository definition.
+     * See {@link #getRepo()}
+     */
+    public List<String> getRepos()
     {
-        return repo;
+       return Arrays.asList(repo.split(":"));
     }
 
     /**
