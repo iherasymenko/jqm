@@ -6,9 +6,9 @@ import java.util.List;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.enioka.admin.MetaService;
-import com.enioka.api.admin.NodeDto;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.jqm.jdbc.DbConn;
+import com.enioka.jqm.model.Node;
 
 @Parameters(commandNames = "Install-NodeTemplate", commandDescription = "Apply a template, i.e. the configuration of a node, to another node.")
 class CommandInstallNodeTemplate extends CommandBase
@@ -25,8 +25,8 @@ class CommandInstallNodeTemplate extends CommandBase
         try (DbConn cnx = Helpers.getNewDbSession())
         {
             // Throws exception if nodes not found.
-            NodeDto template = MetaService.getNode(cnx, templateName);
-            NodeDto target = MetaService.getNode(cnx, nodeName);
+            Node template = Node.getNode(cnx, templateName);
+            Node target = Node.getNode(cnx, nodeName);
 
             // Apply deployments parameters
             ArrayList<QueueMappingDto> mappings = new ArrayList<>(MetaService.getQueueMappings(cnx));
@@ -69,9 +69,9 @@ class CommandInstallNodeTemplate extends CommandBase
             target.setPort(template.getPort());
             target.setRootLogLevel(template.getRootLogLevel());
             target.setTmpDirectory(template.getTmpDirectory());
-            MetaService.upsertNode(cnx, target);
+            Node.upsert(cnx, target);
 
-            // Done - meta service does not commit
+            // Done - Node does not commit
             cnx.commit();
             return 0;
         }

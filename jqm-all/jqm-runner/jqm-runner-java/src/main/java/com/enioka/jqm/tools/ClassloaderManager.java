@@ -92,7 +92,7 @@ class ClassloaderManager
         JobDef jd = ji.getJD();
 
         // Extract the jar actual path
-        File jarFile = new File(FilenameUtils.concat(new File(ji.getNode().getRepo()).getAbsolutePath(), jd.getJarPath()));
+        File jarFile = new File(FilenameUtils.concat(new File(ji.getNode().getJobRepoDirectory()).getAbsolutePath(), jd.getJarPath()));
 
         // The parent class loader is normally the CL with EXT on its CL. But if no lib load, user current one (happens for external
         // payloads)

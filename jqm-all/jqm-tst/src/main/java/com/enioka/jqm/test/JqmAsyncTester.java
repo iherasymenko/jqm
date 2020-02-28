@@ -41,7 +41,7 @@ import com.enioka.jqm.tools.JqmEngineOperations;
  * the web services are not loaded, the file retrieval methods of these APIs will not work, so the tester provides a
  * {@link #getDeliverableContent(Deliverable)} method to compensate. The tester also provides a few helper methods (accelerators) that
  * encapsulate the client API.<br>
- * 
+ *
  * If using resources (JNDI), they must be put inside a resource.xml file at the root of class loader search.<br>
  * Note that tester instances are not thread safe.
  */
@@ -122,7 +122,7 @@ public class JqmAsyncTester
     /**
      * Create a new node. It is not started by this method.<br>
      * This must be called before starting the tester.
-     * 
+     *
      * @param nodeName
      *            the name of the node. Must be unique.
      */
@@ -147,7 +147,7 @@ public class JqmAsyncTester
 
     /**
      * Changes the log level of existing and future nodes.
-     * 
+     *
      * @param level
      *            TRACE, DEBUG, INFO, WARNING, ERROR (or anything, which is interpreted as INFO)
      */
@@ -164,7 +164,7 @@ public class JqmAsyncTester
      * this.<br>
      * The first queue created is considered to be the default queue.<br>
      * This must be called before starting the engines.
-     * 
+     *
      * @param name
      *            must be unique.
      */
@@ -229,7 +229,7 @@ public class JqmAsyncTester
      * The job description and name will be the class name (simple name, not the fully qualified name).<br>
      * If you need further customisation, directly create your {@link TestJobDefinition} and call
      * {@link #addJobDefinition(TestJobDefinition)} instead of using this method.
-     * 
+     *
      * @param classToRun
      *            a class present inside the class path which should be launched by JQM.
      * @return the tester itself to allow fluid API behaviour.
@@ -246,7 +246,7 @@ public class JqmAsyncTester
      * The job description and name will be identical<br>
      * If you need further customisation, directly create your {@link TestJobDefinition} and call
      * {@link #addJobDefinition(TestJobDefinition)} instead of using this method.
-     * 
+     *
      * @param name
      *            name of the new job definition (as used in the enqueue methods)
      * @param className
@@ -297,7 +297,7 @@ public class JqmAsyncTester
 
     /**
      * Helper method to enqueue a new launch request. Simple JqmClientFactory.getClient().enqueue wrapper.
-     * 
+     *
      * @return the request ID.
      */
     public int enqueue(String name)
@@ -307,7 +307,7 @@ public class JqmAsyncTester
 
     /**
      * Wait for a given amount of ended job instances (OK or KO).
-     * 
+     *
      * @param nbResult
      *            the expected result count
      * @param timeoutMs
@@ -333,7 +333,7 @@ public class JqmAsyncTester
     /**
      * Wait for a given amount of ended job instances (OK or KO). Shortcut for {@link #waitForResults(int, int, int)} with 0ms of additional
      * wait time.
-     * 
+     *
      * @param nbResult
      *            the expected result count
      * @param timeoutMs
@@ -392,7 +392,7 @@ public class JqmAsyncTester
 
     /**
      * Removes all job instances from the queues and the history.
-     * 
+     *
      * @param em
      */
     public void cleanupOperationalDbData()
@@ -407,7 +407,7 @@ public class JqmAsyncTester
 
     /**
      * Deletes all job definitions. This calls {@link #cleanupOperationalDbData()}
-     * 
+     *
      * @param em
      */
     public void cleanupAllJobDefinitions()
@@ -484,7 +484,7 @@ public class JqmAsyncTester
      * Version of {@link JqmClient#getDeliverableContent(Deliverable)} which does not require the web service APIs to be enabled to work.
      * Also, returned files do not self-destruct on stream close.<br>
      * See the javadoc of the original method for details.
-     * 
+     *
      * @throws FileNotFoundException
      */
     public InputStream getDeliverableContent(Deliverable file) throws FileNotFoundException
@@ -500,6 +500,6 @@ public class JqmAsyncTester
         String nodeName = ji.getNodeName();
         Node n = nodes.get(nodeName);
 
-        return new FileInputStream(FilenameUtils.concat(n.getDlRepo(), file.getFilePath()));
+        return new FileInputStream(FilenameUtils.concat(n.getOutputDirectory(), file.getFilePath()));
     }
 }

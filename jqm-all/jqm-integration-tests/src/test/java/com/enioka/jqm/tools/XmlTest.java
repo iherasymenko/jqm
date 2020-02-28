@@ -25,13 +25,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.enioka.admin.MetaService;
-import com.enioka.api.admin.NodeDto;
 import com.enioka.api.admin.QueueDto;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.jqm.jdbc.NoResultException;
 import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.JobDef;
 import com.enioka.jqm.model.Queue;
+import com.enioka.jqm.model.Node;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
@@ -51,13 +51,13 @@ public class XmlTest extends JqmBaseTest
         tmp.add("VIPQueue");
         tmp.add("NormalQueue");
 
-        XmlQueueExporter.export(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml", cnx, tmp);
+        XmlQueueExporter.export(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml", cnx, tmp);
 
-        File t = new File(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml");
+        File t = new File(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml");
         Assert.assertEquals(true, t.exists());
 
         // --> Test Import
-        XmlQueueParser.parse(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml", cnx);
+        XmlQueueParser.parse(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml", cnx);
 
         try
         {
@@ -90,13 +90,13 @@ public class XmlTest extends JqmBaseTest
         CreationTools.createJobDef(null, true, "App", null, "jqm-tests/jqm-test-datetimemaven/target/test.jar", TestHelpers.qNormal, 42,
                 "DateTime", null, "Franquin", "ModuleMachin", "other", "other", false, cnx);
 
-        XmlQueueExporter.export(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml", cnx);
+        XmlQueueExporter.export(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml", cnx);
 
-        File t = new File(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml");
+        File t = new File(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml");
         Assert.assertEquals(true, t.exists());
 
         // --> Test Import
-        XmlQueueParser.parse(TestHelpers.node.getDlRepo() + "xmlexportqueuetest.xml", cnx);
+        XmlQueueParser.parse(TestHelpers.node.getOutputDirectory() + "xmlexportqueuetest.xml", cnx);
 
         try
         {
@@ -192,15 +192,15 @@ public class XmlTest extends JqmBaseTest
         CreationTools.createJobDef(null, true, "App", null, "jqm-tests/jqm-test-datetimemaven/target/test.jar", TestHelpers.qNormal, 42,
                 "DateTime2", null, "Franquin", "ModuleMachin", "other", "other", false, cnx);
 
-        XmlJobDefExporter.export(TestHelpers.node.getDlRepo() + "xmlexportjobdeftest.xml", cnx);
+        XmlJobDefExporter.export(TestHelpers.node.getOutputDirectory() + "xmlexportjobdeftest.xml", cnx);
 
-        File f = new File(TestHelpers.node.getDlRepo() + "xmlexportjobdeftest.xml");
+        File f = new File(TestHelpers.node.getOutputDirectory() + "xmlexportjobdeftest.xml");
         Assert.assertEquals(true, f.exists());
 
         // -> Delete all entries and try to reimport them from the exported file
         TestHelpers.cleanup(cnx, true);
 
-        XmlJobDefParser.parse(TestHelpers.node.getDlRepo() + "xmlexportjobdeftest.xml", cnx);
+        XmlJobDefParser.parse(TestHelpers.node.getOutputDirectory() + "xmlexportjobdeftest.xml", cnx);
 
         // test the 4 JobDef were imported
         JobDef fibo = null;
@@ -319,10 +319,10 @@ public class XmlTest extends JqmBaseTest
         XmlConfigurationParser.parse("target/payloads/jqm-test-xml/xmlnodeimport1.xml", cnx);
         cnx.commit();
 
-        List<NodeDto> nodes = MetaService.getNodes(cnx);
-        NodeDto node = null;
+        List<Node> nodes = Node.getNodes(cnx);
+        Node node = null;
 
-        for (NodeDto dto : nodes)
+        for (Node dto : nodes)
         {
             if (dto.getName().equals("Node1"))
             {
@@ -374,9 +374,9 @@ public class XmlTest extends JqmBaseTest
         XmlConfigurationParser.parse("target/payloads/jqm-test-xml/xmlnodeimport2.xml", cnx);
         cnx.commit();
 
-        nodes = MetaService.getNodes(cnx);
+        nodes = Node.getNodes(cnx);
         node = null;
-        for (NodeDto dto : nodes)
+        for (Node dto : nodes)
         {
             if (dto.getName().equals("Node1"))
             {
@@ -428,9 +428,9 @@ public class XmlTest extends JqmBaseTest
         XmlConfigurationParser.parse("target/payloads/jqm-test-xml/xmlnodeimport2.xml", cnx);
         cnx.commit();
 
-        nodes = MetaService.getNodes(cnx);
+        nodes = Node.getNodes(cnx);
         node = null;
-        for (NodeDto dto : nodes)
+        for (Node dto : nodes)
         {
             if (dto.getName().equals("Node1"))
             {

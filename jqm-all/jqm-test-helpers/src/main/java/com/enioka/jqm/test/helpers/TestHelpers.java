@@ -92,7 +92,7 @@ public class TestHelpers
         TestHelpers.dpNormal3 = DeploymentParameter.create(cnx, node3, 2, 300, qNormal3);
         TestHelpers.dpSlow3 = DeploymentParameter.create(cnx, node3, 1, 1000, qSlow3);
 
-        if (!(new File(TestHelpers.node.getDlRepo())).isDirectory() && !(new File(TestHelpers.node.getDlRepo())).mkdir())
+        if (!(new File(TestHelpers.node.getOutputDirectory())).isDirectory() && !(new File(TestHelpers.node.getOutputDirectory())).mkdir())
         {
             throw new RuntimeException("could not create output directory");
         }
@@ -160,10 +160,10 @@ public class TestHelpers
                     FileUtils.deleteDirectory(new File("./webapp"));
                 }
                 // Where files created by payloads are stored
-                File f = TestHelpers.node == null ? null : new File(TestHelpers.node.getDlRepo());
+                File f = TestHelpers.node == null ? null : new File(TestHelpers.node.getOutputDirectory());
                 if (f != null && f.isDirectory())
                 {
-                    FileUtils.cleanDirectory(new File(TestHelpers.node.getDlRepo()));
+                    FileUtils.cleanDirectory(new File(TestHelpers.node.getOutputDirectory()));
                 }
                 // Temp dir where files downloaded by the API are stored (supposed to be self-destructible file but anyway)
                 if ((new File(System.getProperty("java.io.tmpdir") + "/jqm")).isDirectory())

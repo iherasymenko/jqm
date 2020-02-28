@@ -20,7 +20,7 @@ import java.io.Serializable;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * A mapping makes a {@link NodeDto} poll a {@link QueueDto}.
+ * A mapping makes a {@link Node} poll a {@link QueueDto}.
  */
 @XmlRootElement
 public class QueueMappingDto implements Serializable

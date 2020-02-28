@@ -1,8 +1,8 @@
 package com.enioka.jqm.tools;
 
 import com.beust.jcommander.Parameters;
-import com.enioka.admin.MetaService;
 import com.enioka.jqm.jdbc.DbConn;
+import com.enioka.jqm.model.Node;
 
 @Parameters(commandNames = "Get-NodeCount", commandDescription = "Get how many nodes are declared inside the central configuration.")
 class CommandGetNodeCount extends CommandBase
@@ -12,7 +12,7 @@ class CommandGetNodeCount extends CommandBase
     {
         try (DbConn cnx = Helpers.getNewDbSession())
         {
-            jqmlogger.info("Existing nodes: " + MetaService.getNodes(cnx).size());
+            jqmlogger.info("Existing nodes: " + Node.getNodes(cnx).size());
             return 0;
         }
         catch (Exception e)

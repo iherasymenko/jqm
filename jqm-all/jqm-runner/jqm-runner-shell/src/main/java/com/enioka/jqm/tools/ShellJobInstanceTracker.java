@@ -84,7 +84,7 @@ class ShellJobInstanceTracker implements JobInstanceTracker, ShellJobInstanceTra
 
         // Ready launch
         ProcessBuilder pb = new ProcessBuilder(args);
-        pb.directory(new File(this.ji.getNode().getRepo()));
+        pb.directory(new File(this.ji.getNode().getJobRepoDirectory()));
         pb.redirectErrorStream(false);
 
         // Environment variables
@@ -108,7 +108,7 @@ class ShellJobInstanceTracker implements JobInstanceTracker, ShellJobInstanceTra
         env.put("JQM_JI_DELIVERY_DIR", this.deliveryDir.getAbsolutePath());
 
         env.put("JQM_NODE_NAME", this.ji.getNode().getName());
-        env.put("JQM_NODE_APPLICATION_ROOT", this.ji.getNode().getRepo());
+        env.put("JQM_NODE_APPLICATION_ROOT", this.ji.getNode().getJobRepoDirectory());
         env.put("JQM_NODE_LOG_LEVEL", this.ji.getNode().getRootLogLevel());
 
         env.put("JQM_Q_NAME", this.ji.getQ().getName());

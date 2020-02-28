@@ -49,7 +49,7 @@ public class DeliverableTest extends JqmBaseTest
         Helpers.setSingleParam("enableWsApiAuth", "true", cnx);
         Helpers.setSingleParam("enableWsApiSsl", "false", cnx);
 
-        int id = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getDlRepo())
+        int id = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getOutputDirectory())
                 .addDefParameter("fileName", "jqm-test-deliverable1.txt").run(this);
 
         List<InputStream> tmp = JqmClientFactory.getClient().getJobDeliverablesContent(id);
@@ -70,10 +70,10 @@ public class DeliverableTest extends JqmBaseTest
         Helpers.setSingleParam("enableWsApiAuth", "true", cnx);
         Helpers.setSingleParam("enableWsApiSsl", "false", cnx);
 
-        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getDlRepo())
+        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getOutputDirectory())
                 .addDefParameter("fileName", "jqm-test-deliverable2.txt").run(this);
 
-        File f = new File(TestHelpers.node.getDlRepo() + "jqm-test-deliverable2.txt");
+        File f = new File(TestHelpers.node.getOutputDirectory() + "jqm-test-deliverable2.txt");
         Assert.assertEquals(false, f.exists()); // file should have been moved
 
         List<com.enioka.jqm.api.Deliverable> files = JqmClientFactory.getClient().getJobDeliverables(jobId);
@@ -98,10 +98,10 @@ public class DeliverableTest extends JqmBaseTest
         Helpers.setSingleParam("enableWsApiAuth", "false", cnx);
         Helpers.setSingleParam("enableWsApiSsl", "false", cnx);
 
-        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getDlRepo())
+        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getOutputDirectory())
                 .addDefParameter("fileName", "jqm-test-deliverable3.txt").run(this);
 
-        File f = new File(TestHelpers.node.getDlRepo() + "jqm-test-deliverable3.txt");
+        File f = new File(TestHelpers.node.getOutputDirectory() + "jqm-test-deliverable3.txt");
         Assert.assertEquals(false, f.exists()); // file should have been moved
 
         List<com.enioka.jqm.api.Deliverable> files = JqmClientFactory.getClient().getJobDeliverables(jobId);
@@ -129,10 +129,10 @@ public class DeliverableTest extends JqmBaseTest
         JqmClientFactory.setProperty("com.enioka.jqm.ws.truststoreFile", "./conf/trusted.jks");
         JqmClientFactory.setProperty("com.enioka.jqm.ws.truststorePass", "SuperPassword");
 
-        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getDlRepo())
+        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getOutputDirectory())
                 .addDefParameter("fileName", "jqm-test-deliverable4.txt").run(this);
 
-        File f = new File(TestHelpers.node.getDlRepo() + "jqm-test-deliverable4.txt");
+        File f = new File(TestHelpers.node.getOutputDirectory() + "jqm-test-deliverable4.txt");
         Assert.assertEquals(false, f.exists()); // file should have been moved
 
         List<com.enioka.jqm.api.Deliverable> files = JqmClientFactory.getClient().getJobDeliverables(jobId);
@@ -152,7 +152,7 @@ public class DeliverableTest extends JqmBaseTest
     @Test
     public void testGetAllDeliverables() throws Exception
     {
-        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getDlRepo())
+        int jobId = JqmSimpleTest.create(cnx, "pyl.EngineApiSendDeliverable").addDefParameter("filepath", TestHelpers.node.getOutputDirectory())
                 .addDefParameter("fileName", "jqm-test-deliverable5.txt").run(this);
 
         List<com.enioka.jqm.api.Deliverable> tmp = JqmClientFactory.getClient().getJobDeliverables(jobId);

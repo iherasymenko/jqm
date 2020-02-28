@@ -6,10 +6,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.enioka.admin.MetaService;
-import com.enioka.api.admin.NodeDto;
 import com.enioka.jqm.api.JobRequest;
 import com.enioka.jqm.model.RRole;
 import com.enioka.jqm.model.RUser;
+import com.enioka.jqm.model.Node;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
@@ -68,18 +68,18 @@ public class CliTest extends JqmBaseTest
     @Test
     public void testTemplate() throws Exception
     {
-        NodeDto template = MetaService.getNode(cnx, TestHelpers.nodeMix.getId());
+        Node template = Node.getNode(cnx, TestHelpers.nodeMix.getId());
         template.setPort(123);
-        MetaService.upsertNode(cnx, template);
+        Node.upsert(cnx, template);
         cnx.commit();
 
-        NodeDto target = MetaService.getNode(cnx, TestHelpers.node.getId());
+        Node target = Node.getNode(cnx, TestHelpers.node.getId());
         Assert.assertEquals(3, MetaService.getNodeQueueMappings(cnx, target.getId()).size());
 
         // Capital letter -> should be ignored.
         Main.runCommand(new String[] { "Install-NodeTemPlate", "-t", TestHelpers.nodeMix.getName(), "-n", TestHelpers.node.getName() });
 
-        target = MetaService.getNode(cnx, TestHelpers.node.getId());
+        target = Node.getNode(cnx, TestHelpers.node.getId());
 
         Assert.assertEquals(template.getPort(), target.getPort());
         Assert.assertEquals(1, MetaService.getNodeQueueMappings(cnx, target.getId()).size());

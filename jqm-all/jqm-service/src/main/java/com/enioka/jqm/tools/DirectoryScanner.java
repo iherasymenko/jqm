@@ -129,7 +129,7 @@ class DirectoryScanner implements Runnable
             // We have a deployment unit! Just deploy it.
             try
             {
-                FileUtils.copyDirectory(subDir, new File(node.getRepo(), subDir.getName()));
+                FileUtils.copyDirectory(subDir, new File(node.getJobRepoDirectory(), subDir.getName()));
             }
             catch (IOException e)
             {
@@ -139,7 +139,7 @@ class DirectoryScanner implements Runnable
 
             try
             {
-                importDeploymentUnit(new File(node.getRepo(), new File(subDir.getName(), xml.getName()).getPath()));
+                importDeploymentUnit(new File(node.getJobRepoDirectory(), new File(subDir.getName(), xml.getName()).getPath()));
             }
             catch (Exception e)
             {

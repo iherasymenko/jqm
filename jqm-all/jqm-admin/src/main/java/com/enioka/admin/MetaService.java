@@ -9,7 +9,6 @@ import java.util.Map;
 
 import com.enioka.api.admin.JndiObjectResourceDto;
 import com.enioka.api.admin.JobDefDto;
-import com.enioka.api.admin.NodeDto;
 import com.enioka.api.admin.QueueDto;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.RRoleDto;
@@ -668,134 +667,14 @@ public class MetaService
         }
     }
 
-    static NodeDto mapNode(ResultSet rs, int colShift)
+    public static void syncNodes(DbConn cnx, List<Node> nodes)
     {
-        try
-        {
-            NodeDto tmp = new NodeDto();
-
-            tmp.setId(rs.getInt(1 + colShift));
-
-            tmp.setOutputDirectory(rs.getString(2 + colShift));
-            tmp.setDns(rs.getString(3 + colShift));
-            tmp.setEnabled(rs.getBoolean(4 + colShift));
-            tmp.setJmxRegistryPort(rs.getInt(5 + colShift));
-            tmp.setJmxServerPort(rs.getInt(6 + colShift));
-            tmp.setLoadApiAdmin(rs.getBoolean(7 + colShift));
-            tmp.setLoadApiClient(rs.getBoolean(8 + colShift));
-            tmp.setLoapApiSimple(rs.getBoolean(9 + colShift));
-            tmp.setName(rs.getString(10 + colShift));
-            tmp.setPort(rs.getInt(11 + colShift));
-            tmp.setJobRepoDirectory(rs.getString(12 + colShift));
-            tmp.setRootLogLevel(rs.getString(13 + colShift));
-            tmp.setStop(rs.getBoolean(14 + colShift));
-            tmp.setTmpDirectory(rs.getString(15 + colShift));
-
-            Calendar c = null;
-            if (rs.getTimestamp(16 + colShift) != null)
-            {
-                c = Calendar.getInstance();
-                c.setTimeInMillis(rs.getTimestamp(16 + colShift).getTime());
-            }
-            tmp.setLastSeenAlive(c);
-
-            return tmp;
-        }
-        catch (SQLException e)
-        {
-            throw new DatabaseException(e);
-        }
-    }
-
-    public static List<NodeDto> getNodes(DbConn cnx)
-    {
-        List<NodeDto> res = new ArrayList<>();
-        try
-        {
-            ResultSet rs = cnx.runSelect("node_select_all");
-            while (rs.next())
-            {
-                res.add(mapNode(rs, 0));
-            }
-            rs.close();
-        }
-        catch (SQLException e)
-        {
-            throw new DatabaseException(e);
-        }
-        return res;
-    }
-
-    public static NodeDto getNode(DbConn cnx, int id)
-    {
-        ResultSet rs = null;
-        try
-        {
-            rs = cnx.runSelect("node_select_by_id", id);
-            if (!rs.next())
-            {
-                throw new JqmAdminApiUserException("no result");
-            }
-
-            return mapNode(rs, 0);
-        }
-        catch (SQLException e)
-        {
-            throw new DatabaseException(e);
-        }
-    }
-
-    public static NodeDto getNode(DbConn cnx, String nodeName)
-    {
-        ResultSet rs = null;
-        try
-        {
-            rs = cnx.runSelect("node_select_by_key", nodeName);
-            if (!rs.next())
-            {
-                throw new JqmAdminApiUserException("no result");
-            }
-
-            return mapNode(rs, 0);
-        }
-        catch (SQLException e)
-        {
-            throw new DatabaseException(e);
-        }
-    }
-
-    public static void upsertNode(DbConn cnx, NodeDto dto)
-    {
-        if (dto.getId() != null)
-        {
-            QueryResult qr = cnx.runUpdate("node_update_changed_by_id", dto.getOutputDirectory(), dto.getDns(), dto.getEnabled(),
-                    dto.getJmxRegistryPort(), dto.getJmxServerPort(), dto.getLoadApiAdmin(), dto.getLoadApiClient(), dto.getLoapApiSimple(),
-                    dto.getName(), dto.getPort(), dto.getJobRepoDirectory(), dto.getRootLogLevel(), dto.getStop(), dto.getTmpDirectory(),
-                    dto.getId(), dto.getOutputDirectory(), dto.getDns(), dto.getEnabled(), dto.getJmxRegistryPort(), dto.getJmxServerPort(),
-                    dto.getLoadApiAdmin(), dto.getLoadApiClient(), dto.getLoapApiSimple(), dto.getName(), dto.getPort(),
-                    dto.getJobRepoDirectory(), dto.getRootLogLevel(), dto.getStop(), dto.getTmpDirectory());
-
-            if (qr.nbUpdated != 1)
-            {
-                jqmlogger.debug("No update was done as object either does not exist or no modifications were done");
-            }
-        }
-        else
-        {
-            // Should actually never be used... nodes should be created through CLI.
-            Node.create(cnx, dto.getName(), dto.getPort(), dto.getOutputDirectory(), dto.getJobRepoDirectory(), dto.getTmpDirectory(),
-                    dto.getDns(), dto.getRootLogLevel());
-        }
-    }
-
-    public static void syncNodes(DbConn cnx, List<NodeDto> dtos)
-    {
-        for (NodeDto existing : getNodes(cnx))
+        for (Node existing : Node.getNodes(cnx))
         {
             boolean foundInNewSet = false;
-            for (NodeDto newdto : dtos)
+            for (Node newNode : nodes)
             {
-                if (newdto.getId() != null && newdto.getId().equals(existing.getId()))
+                if (newNode.getId() != null && newNode.getId().equals(existing.getId()))
                 {
                     foundInNewSet = true;
                     break;
@@ -808,9 +687,9 @@ public class MetaService
             }
         }
 
-        for (NodeDto dto : dtos)
+        for (Node node : nodes)
         {
-            upsertNode(cnx, dto);
+            Node.upsert(cnx, node);
         }
     }
 

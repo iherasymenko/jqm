@@ -35,16 +35,18 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
+import com.enioka.admin.JqmAdminApiUserException;
 import com.enioka.admin.MetaService;
 import com.enioka.api.admin.JndiObjectResourceDto;
 import com.enioka.api.admin.JobDefDto;
-import com.enioka.api.admin.NodeDto;
 import com.enioka.api.admin.PemissionsBagDto;
 import com.enioka.api.admin.QueueDto;
 import com.enioka.api.admin.QueueMappingDto;
 import com.enioka.api.admin.RRoleDto;
 import com.enioka.api.admin.RUserDto;
 import com.enioka.jqm.jdbc.DbConn;
+import com.enioka.jqm.jdbc.NoResultException;
+import com.enioka.jqm.model.Node;
 import com.enioka.jqm.model.GlobalParameter;
 import com.enioka.jqm.model.JobDef;
 import com.enioka.jqm.model.RPermission;
@@ -66,11 +68,11 @@ public class ServiceAdmin
     @Path("node")
     @Produces(MediaType.APPLICATION_JSON)
     @HttpCache("public, max-age=60")
-    public List<NodeDto> getNodes()
+    public List<Node> getNodes()
     {
         try (DbConn cnx = Helpers.getDbSession())
         {
-            return MetaService.getNodes(cnx);
+            return Node.getNodes(cnx);
         }
     }
 
@@ -78,18 +80,22 @@ public class ServiceAdmin
     @Path("node/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @HttpCache("public, max-age=60")
-    public NodeDto getNode(@PathParam("id") int id)
+    public Node getNode(@PathParam("id") int id)
     {
         try (DbConn cnx = Helpers.getDbSession())
         {
-            return MetaService.getNode(cnx, id);
+            return Node.getNode(cnx, id);
+        }
+        catch (NoResultException e)
+        {
+            throw new JqmAdminApiUserException("no result");
         }
     }
 
     @PUT
     @Path("node")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void setNodes(List<NodeDto> dtos)
+    public void setNodes(List<Node> dtos)
     {
         try (DbConn cnx = Helpers.getDbSession())
         {
@@ -101,11 +107,11 @@ public class ServiceAdmin
     @POST
     @Path("node")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void setNode(NodeDto dto)
+    public void setNode(Node dtos)
     {
         try (DbConn cnx = Helpers.getDbSession())
         {
-            MetaService.upsertNode(cnx, dto);
+            Node.upsert(cnx, dtos);
             cnx.commit();
         }
     }

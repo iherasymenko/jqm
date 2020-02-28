@@ -49,7 +49,7 @@ class JobInstanceEngineApi implements JobManager
     /**
      * Create a {@link com.enioka.jqm.model.Message} with the given message. The {@link com.enioka.jqm.model.History} to link to is deduced
      * from the context.
-     * 
+     *
      * @param msg
      * @throws JqmKillException
      */
@@ -65,7 +65,7 @@ class JobInstanceEngineApi implements JobManager
 
     /**
      * Update the {@link com.enioka.jqm.model.History} with the given progress data.
-     * 
+     *
      * @param msg
      * @throws JqmKillException
      */
@@ -159,7 +159,7 @@ class JobInstanceEngineApi implements JobManager
     {
         try (DbConn cnx = Helpers.getNewDbSession())
         {
-            String outputRoot = this.ji.getNode().getDlRepo();
+            String outputRoot = this.ji.getNode().getOutputDirectory();
             String ext = FilenameUtils.getExtension(path);
             String relDestPath = ji.getJD().getApplicationName() + "/" + ji.getId() + "/" + UUID.randomUUID() + "." + ext;
             String absDestPath = FilenameUtils.concat(outputRoot, relDestPath);

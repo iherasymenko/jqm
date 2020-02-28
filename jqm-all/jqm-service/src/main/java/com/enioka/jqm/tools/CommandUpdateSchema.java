@@ -3,9 +3,9 @@ package com.enioka.jqm.tools;
 import java.util.Properties;
 
 import com.beust.jcommander.Parameters;
-import com.enioka.admin.MetaService;
 import com.enioka.jqm.jdbc.Db;
 import com.enioka.jqm.jdbc.DbConn;
+import com.enioka.jqm.model.Node;
 
 @Parameters(commandNames = "Update-Schema", commandDescription = "Updates the database schema.")
 class CommandUpdateSchema extends CommandBase
@@ -27,7 +27,7 @@ class CommandUpdateSchema extends CommandBase
             Helpers.updateConfiguration(cnx);
             cnx.commit();
             jqmlogger.info("Upgrade done");
-            jqmlogger.info("Existing nodes: " + MetaService.getNodes(cnx).size());
+            jqmlogger.info("Existing nodes: " + Node.getNodes(cnx).size());
             return 0;
         }
         catch (Exception e)

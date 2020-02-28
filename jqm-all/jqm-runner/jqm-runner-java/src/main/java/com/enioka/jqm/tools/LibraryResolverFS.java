@@ -99,7 +99,7 @@ class LibraryResolverFS
 
         // Is cache stale?
         Date lastLoaded = libs.loadTime;
-        File jarFile = new File(FilenameUtils.concat(new File(node.getRepo()).getAbsolutePath(), jd.getJarPath()));
+        File jarFile = new File(FilenameUtils.concat(new File(node.getJobRepoDirectory()).getAbsolutePath(), jd.getJarPath()));
         File jarDir = jarFile.getParentFile();
         File libDir = new File(FilenameUtils.concat(jarDir.getAbsolutePath(), "lib"));
 
@@ -118,7 +118,7 @@ class LibraryResolverFS
     {
         jqmlogger.debug("Resolving classpath for job definition " + jd.getApplicationName());
 
-        File jarFile = new File(FilenameUtils.concat(new File(node.getRepo()).getAbsolutePath(), jd.getJarPath()));
+        File jarFile = new File(FilenameUtils.concat(new File(node.getJobRepoDirectory()).getAbsolutePath(), jd.getJarPath()));
         File jarDir = jarFile.getParentFile();
         File libDir = new File(FilenameUtils.concat(jarDir.getAbsolutePath(), "lib"));
         File libDirExtracted = new File(FilenameUtils.concat(jarDir.getAbsolutePath(), "libFromJar"));
