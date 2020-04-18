@@ -29,12 +29,12 @@ public class Db
     /**
      * The version of the schema as it described in the current Maven artifact
      */
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
 
     /**
      * The SCHEMA_VERSION version is backward compatible until this version
      */
-    private static final int SCHEMA_COMPATIBLE_VERSION = 1;
+    private static final int SCHEMA_COMPATIBLE_VERSION = 2;
 
     /**
      * The list of different database adapters. We are using reflection for loading them for future extensibility.
@@ -225,12 +225,11 @@ public class Db
     public static Properties loadProperties(String[] filesToLoad)
     {
         Properties p = new Properties();
-        InputStream fis = null;
+
         for (String path : filesToLoad)
         {
-            try
+            try (InputStream fis = Db.class.getClassLoader().getResourceAsStream(path))
             {
-                fis = Db.class.getClassLoader().getResourceAsStream(path);
                 if (fis != null)
                 {
                     p.load(fis);
@@ -241,10 +240,6 @@ public class Db
             {
                 // We allow no configuration files, but not an unreadable configuration file.
                 throw new DatabaseException("META-INF/jqm.properties file is invalid", e);
-            }
-            finally
-            {
-                closeQuietly(fis);
             }
         }
 
@@ -302,11 +297,10 @@ public class Db
 
     private void checkSchemaVersion()
     {
-        DbConn cnx = this.getConn();
         int db_schema_version = 0;
         int db_schema_compat_version = 0;
         Map<String, Object> rs = null;
-        try
+        try (DbConn cnx = this.getConn())
         {
             rs = cnx.runSelectSingleRow("version_select_latest");
             db_schema_version = (Integer) rs.get("VERSION_D1");
@@ -320,10 +314,6 @@ public class Db
         catch (Exception z)
         {
             throw new DatabaseException("could not retrieve version information from database", z);
-        }
-        finally
-        {
-            cnx.close();
         }
 
         if (SCHEMA_VERSION > db_schema_version)
@@ -439,50 +429,34 @@ public class Db
      */
     private void initAdapter()
     {
-        Connection tmp = null;
-        DatabaseMetaData meta = null;
-        try
+        DbAdapter newAdpt = null;
+
+        try (Connection tmp = _ds.getConnection())
         {
-            tmp = _ds.getConnection();
-            meta = tmp.getMetaData();
+            DatabaseMetaData meta = tmp.getMetaData();
             product = meta.getDatabaseProductName().toLowerCase();
+
+            for (String s : ADAPTERS)
+            {
+                try
+                {
+                    Class<? extends DbAdapter> clazz = Db.class.getClassLoader().loadClass(s).asSubclass(DbAdapter.class);
+                    newAdpt = clazz.newInstance();
+                    if (newAdpt.compatibleWith(meta))
+                    {
+                        adapter = newAdpt;
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new DatabaseException("Issue when loading database adapter named: " + s, e);
+                }
+            }
         }
         catch (SQLException e)
         {
             throw new DatabaseException("Cannot connect to the database", e);
-        }
-        finally
-        {
-            try
-            {
-                if (tmp != null)
-                {
-                    tmp.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                // Nothing to do.
-            }
-        }
-
-        DbAdapter newAdpt = null;
-        for (String s : ADAPTERS)
-        {
-            try
-            {
-                Class<? extends DbAdapter> clazz = Db.class.getClassLoader().loadClass(s).asSubclass(DbAdapter.class);
-                newAdpt = clazz.newInstance();
-                if (newAdpt.compatibleWith(meta))
-                {
-                    adapter = newAdpt;
-                    break;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new DatabaseException("Issue when loading database adapter named: " + s, e);
-            }
         }
 
         if (adapter == null)
@@ -562,26 +536,5 @@ public class Db
     public String getProduct()
     {
         return this.product;
-    }
-
-    /**
-     * Close utility method.
-     *
-     * @param ps
-     *               statement to close.
-     */
-    private static void closeQuietly(Closeable ps)
-    {
-        if (ps != null)
-        {
-            try
-            {
-                ps.close();
-            }
-            catch (Exception e)
-            {
-                // Do nothing.
-            }
-        }
     }
 }

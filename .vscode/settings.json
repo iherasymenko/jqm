@@ -61,5 +61,9 @@
     "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
     "restructuredtext.confPath": "${workspaceFolder}\\jqm-all\\jqm-doc\\src\\site\\sphinx",
     "cSpell.words": ["RMMN", "RMMP", "configprm", "dtos", "jqmlogger"],
-    "mssql.intelliSense.enableErrorChecking": false
+    "mssql.intelliSense.enableErrorChecking": false,
+    "prettier.printWidth": 180,
+    "[javascript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    }
 }
