@@ -60,10 +60,13 @@
     "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
     "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
     "restructuredtext.confPath": "${workspaceFolder}\\jqm-all\\jqm-doc\\src\\site\\sphinx",
-    "cSpell.words": ["RMMN", "RMMP", "configprm", "dtos", "jqmlogger"],
     "mssql.intelliSense.enableErrorChecking": false,
     "prettier.printWidth": 180,
     "[javascript]": {
         "editor.defaultFormatter": "vscode.typescript-language-features"
-    }
+    },
+    "spellright.documentTypes": ["markdown", "latex", "plaintext", "java"],
+    "spellright.ignoreFiles": ["**/.gitignore", "**/.spellignore", "**/*.dict"],
+    "spellright.language": ["en"],
+    "spellright.notificationClass": "information"
 }
