@@ -15,8 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A Resource Manager in which the resource is a list of items without order. Each JI may take 0 to n items. Items are attributed nominaly -
- * they are named. An environment variable of all attributed items is made available to the JI for when it runs. <br>
+ * A Resource Manager in which the resource is a list of items without order. Each JI may take 0 to n items. Items are attributed nominally
+ * - they are named. An environment variable of all attributed items is made available to the JI for when it runs. <br>
  * <br>
  * Blocks once the resource is exhausted.<br>
  * This RM has no persistence - resources are counted in memory, and considered free on startup.<br>

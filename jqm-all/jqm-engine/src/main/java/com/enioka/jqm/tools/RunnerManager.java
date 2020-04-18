@@ -27,6 +27,7 @@ class RunnerManager
     {
         jqmlogger.info("Registering java runner");
         runners.add(new JavaRunner(cnx));
+        jqmlogger.info("Registering shell runner");
         runners.add(new ShellRunner(cnx));
     }
 

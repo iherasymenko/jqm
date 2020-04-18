@@ -8,6 +8,7 @@
         "lextudio.restructuredtext",
         "DotJoshJohnson.xml",
         "ban.spellright",
-        "yycalm.linecount"
+        "yycalm.linecount",
+        "ms-python.python"
     ]
 }

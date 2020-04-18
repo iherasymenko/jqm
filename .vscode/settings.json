@@ -65,7 +65,13 @@
     "[javascript]": {
         "editor.defaultFormatter": "vscode.typescript-language-features"
     },
-    "spellright.documentTypes": ["markdown", "latex", "plaintext", "java"],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext",
+        "java",
+        "restructuredtext"
+    ],
     "spellright.ignoreFiles": ["**/.gitignore", "**/.spellignore", "**/*.dict"],
     "spellright.language": ["en"],
     "spellright.notificationClass": "information"

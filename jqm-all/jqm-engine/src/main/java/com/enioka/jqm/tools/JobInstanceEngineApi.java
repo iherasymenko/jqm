@@ -30,6 +30,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The one and only implementation of JobManager - the API offered to running job instances.
+ */
 class JobInstanceEngineApi implements JobManager
 {
     private static Logger jqmlogger = LoggerFactory.getLogger(JobInstanceEngineApi.class);
@@ -49,7 +52,7 @@ class JobInstanceEngineApi implements JobManager
     /**
      * Create a {@link com.enioka.jqm.model.Message} with the given message. The {@link com.enioka.jqm.model.History} to link to is deduced
      * from the context.
-     * 
+     *
      * @param msg
      * @throws JqmKillException
      */
@@ -65,7 +68,7 @@ class JobInstanceEngineApi implements JobManager
 
     /**
      * Update the {@link com.enioka.jqm.model.History} with the given progress data.
-     * 
+     *
      * @param msg
      * @throws JqmKillException
      */

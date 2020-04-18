@@ -161,7 +161,7 @@ public class MiscTest extends JqmBaseTest
         cnx.commit();
 
         TestHelpers.waitFor(2, 3000, cnx);
-        Assert.assertFalse(engines.get("localhost").areAllPollersPolling());
+        Assert.assertFalse(engines.get("localhost").isUpAndRunning());
         engines.clear();
     }
 

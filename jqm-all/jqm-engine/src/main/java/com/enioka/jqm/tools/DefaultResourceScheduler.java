@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The default scheduler aims first at fairness, then wait time, and only then throughput. It is fully described inside the documentation.
  */
-class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceSchedulerMBean
+class DefaultResourceScheduler implements ResourceScheduler
 {
     private static Logger jqmlogger = LoggerFactory.getLogger(DefaultResourceScheduler.class);
 
@@ -70,8 +70,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     // Fields
 
     // Transactional data
-    private Map<Integer, Date> peremption = new ConcurrentHashMap<>();
-    private AtomicInteger actualNbThread = new AtomicInteger(0);
     private boolean strictPollingPeriod = false;
 
     // Queue & resource configuration
@@ -93,7 +91,8 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     private boolean hasStopped = true;
     private Thread localThread = null;
     private Semaphore loop = new Semaphore(0);
-    private Calendar lastLoop = null;
+    private Semaphore endSemaphore = new Semaphore(0);
+    private Calendar latestLoop = null;
 
     // JMX
     private ObjectName name = null;
@@ -357,8 +356,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
 
     private void launch(DbConn cnx, JobInstance ji)
     {
-        actualNbThread.incrementAndGet();
-
         // Actually set it for running on this node and report it on the in-memory object.
         QueryResult qr = cnx.runUpdate("ji_update_status_by_id", localNode.getId(), ji.getId());
         if (qr.nbUpdated != 1)
@@ -375,10 +372,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
 
         // We will run this JI!
         jqmlogger.trace("JI number {} will be run by this scheduler this loop", ji.getId());
-        if (ji.getJD().getMaxTimeRunning() != null)
-        {
-            this.peremption.put(ji.getId(), new Date((new Date()).getTime() + ji.getJD().getMaxTimeRunning() * 60 * 1000));
-        }
 
         // Run it
         if (!ji.getJD().isExternal())
@@ -397,9 +390,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     @Override
     public void releaseResources(JobInstance ji)
     {
-        this.peremption.remove(ji.getId());
-        this.actualNbThread.decrementAndGet();
-
         for (ResourceManagerBase rm : this.usedResourceManagers)
         {
             rm.releaseResource(ji);
@@ -417,11 +407,20 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     // Thread stuff
     ///////////////////////////////////////////////////////////////////////////
 
+    @Override
     public void stop()
     {
         jqmlogger.info("Scheduler has received a stop order");
         run = false;
         loop.release();
+        try
+        {
+            endSemaphore.acquire();
+        }
+        catch (InterruptedException e)
+        {
+            // Nothing to do.
+        }
     }
 
     /**
@@ -436,8 +435,9 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
         }
         hasStopped = false;
         run = true;
-        lastLoop = null;
+        latestLoop = null;
         loop = new Semaphore(0);
+        endSemaphore = new Semaphore(0);
     }
 
     @Override
@@ -445,18 +445,16 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     {
         this.localThread = Thread.currentThread();
         this.localThread.setName("SCHEDULER;polling;");
-        DbConn cnx = null;
 
         registerMBean();
 
         while (true)
         {
-            lastLoop = Calendar.getInstance();
+            latestLoop = Calendar.getInstance();
             jqmlogger.trace("poller loop");
 
-            try
+            try (DbConn cnx = Helpers.getNewDbSession())
             {
-                cnx = Helpers.getNewDbSession();
                 poll(cnx);
             }
             catch (RuntimeException e)
@@ -490,12 +488,11 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
             }
             finally
             {
-                // Reset the connection on each loop.
                 if (Thread.interrupted()) // always clear interrupted status before doing DB operations.
                 {
                     run = false;
+                    break;
                 }
-                Helpers.closeQuietly(cnx);
             }
 
             // Wait according to the deploymentParameter
@@ -522,7 +519,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
             // So only do the graceful shutdown procedure if normal shutdown.
 
             jqmlogger.info("Scheduler is stopping [engine " + this.localNode.getName() + "]");
-            waitForAllThreads(60L * 1000);
 
             // JMX
             if (this.engine.loadJmxBeans)
@@ -540,7 +536,6 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
             // Let the engine decide if it should stop completely
             this.hasStopped = true; // BEFORE check
             jqmlogger.info("Scheduler has ended normally");
-            this.engine.checkEngineEnd();
         }
         else
         {
@@ -551,41 +546,7 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
             // Do not check for engine end - we do not want to shut down the engine on a poller failure.
         }
         localThread = null;
-    }
-
-    private void waitForAllThreads(long timeOutMs)
-    {
-        long timeWaitedMs = 0;
-        long stepMs = 1000;
-        while (timeWaitedMs <= timeOutMs)
-        {
-            jqmlogger.trace("Waiting the end of {} job(s)", actualNbThread);
-
-            if (actualNbThread.get() <= 0)
-            {
-                break;
-            }
-            if (timeWaitedMs == 0)
-            {
-                jqmlogger.info("Waiting for the end of {} jobs on scheduler - timeout is {} ms", actualNbThread, timeOutMs);
-            }
-            try
-            {
-                Thread.sleep(stepMs);
-            }
-            catch (InterruptedException e)
-            {
-                // Interruption => stop right now
-                jqmlogger.warn("Some job instances did not finish in time - wait was interrupted");
-                Thread.currentThread().interrupt();
-                return;
-            }
-            timeWaitedMs += stepMs;
-        }
-        if (timeWaitedMs > timeOutMs)
-        {
-            jqmlogger.warn("Some job instances did not finish in time - they will be killed for the scheduler to be able to stop");
-        }
+        endSemaphore.release();
     }
 
     ////////////////////////////////////////////////////////////
@@ -622,64 +583,9 @@ class DefaultResourceScheduler implements Runnable, IScheduler, DefaultResourceS
     }
 
     @Override
-    public long getCumulativeJobInstancesCount()
-    {
-        DbConn em2 = Helpers.getNewDbSession();
-        try
-        {
-            return em2.runSelectSingle("history_select_count_for_node", Long.class, this.localNode.getId());
-        }
-        finally
-        {
-            Helpers.closeQuietly(em2);
-        }
-    }
-
-    @Override
-    public float getJobsFinishedPerSecondLastMinute()
-    {
-        DbConn em2 = Helpers.getNewDbSession();
-        try
-        {
-            return em2.runSelectSingle("history_select_count_last_mn_for_node", Float.class, this.localNode.getId());
-        }
-        finally
-        {
-            Helpers.closeQuietly(em2);
-        }
-    }
-
-    @Override
-    public long getCurrentlyRunningJobCount()
-    {
-        return this.actualNbThread.get();
-    }
-
-    @Override
-    public Integer getCurrentActiveThreadCount()
-    {
-        return actualNbThread.get();
-    }
-
-    @Override
-    public boolean isActuallyPolling()
+    public boolean isActuallyScheduling()
     {
         // 1000ms is a rough estimate of the time taken to do the actual poll. If it's more, there is a huge issue elsewhere.
-        return (Calendar.getInstance().getTimeInMillis() - this.lastLoop.getTimeInMillis()) <= pollingInterval + 1000;
-    }
-
-    @Override
-    public int getLateJobs()
-    {
-        int i = 0;
-        Date now = new Date();
-        for (Date d : this.peremption.values())
-        {
-            if (now.after(d))
-            {
-                i++;
-            }
-        }
-        return i;
+        return (Calendar.getInstance().getTimeInMillis() - this.latestLoop.getTimeInMillis()) <= pollingInterval + 1000;
     }
 }

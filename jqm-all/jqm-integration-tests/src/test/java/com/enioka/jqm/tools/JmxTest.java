@@ -97,7 +97,7 @@ public class JmxTest extends JqmBaseTest
         Assert.assertEquals((Integer) i, proxy.getId());
         Assert.assertEquals("TestUser", proxy.getUser());
 
-        // Elements that are not set or testable reproductibly, but should not raise any exception
+        // Elements that are not set or testable reproducibly, but should not raise any exception
         proxy.getEnqueueDate();
         proxy.getKeyword1();
         proxy.getKeyword2();
@@ -115,29 +115,27 @@ public class JmxTest extends JqmBaseTest
         // Engine bean
         ObjectName engine = new ObjectName("com.enioka.jqm:type=Node,name=" + TestHelpers.node.getName());
         JqmEngineMBean proxyEngine = JMX.newMBeanProxy(mbsc, engine, JqmEngineMBean.class);
-        Assert.assertEquals(1, proxyEngine.getCumulativeJobInstancesCount() + proxyEngine.getCurrentlyRunningJobCount());
+        Assert.assertEquals(1, proxyEngine.getCumulativeJobInstancesCount());
         Assert.assertTrue(proxyEngine.getUptime() > 0);
         proxyEngine.getVersion();
-        Assert.assertTrue(proxyEngine.isAllPollersPolling());
-        Assert.assertTrue(!proxyEngine.isFull());
+        Assert.assertTrue(proxyEngine.isUpAndRunning());
 
         // //////////////////
         // Poller bean
         ObjectName poller = new ObjectName("com.enioka.jqm:type=Node.Scheduler,Node=" + TestHelpers.node.getName() + ",name=Default");
         DefaultResourceSchedulerMBean proxyPoller = JMX.newMBeanProxy(mbsc, poller, DefaultResourceSchedulerMBean.class);
-        Assert.assertEquals(1, proxyPoller.getCumulativeJobInstancesCount() + proxyPoller.getCurrentActiveThreadCount());
-        proxyPoller.getCurrentlyRunningJobCount();
-        proxyPoller.getJobsFinishedPerSecondLastMinute();
-        //Assert.assertEquals((Integer) 40, proxyPoller.getMaxConcurrentJobInstanceCount());
-        //Assert.assertEquals((Integer) 1, proxyPoller.getPollingIntervalMilliseconds());
 
-        Assert.assertTrue(proxyPoller.isActuallyPolling());
-        //Assert.assertTrue(!proxyPoller.isFull());
+        Assert.assertTrue(proxyPoller.isActuallyScheduling());
 
-        proxyPoller.stop();
+        // //////////////////
+        // JI manager bean
+        ObjectName jiManager = new ObjectName(
+                "com.enioka.jqm:type=Node.JobInstanceManager,Node=" + TestHelpers.node.getName() + ",name=Default");
+        RunningJobInstanceManagerMBean proxyJiManager = JMX.newMBeanProxy(mbsc, jiManager, RunningJobInstanceManagerMBean.class);
+        Assert.assertEquals(1, proxyJiManager.getCumulativeJobInstancesCount() + proxyJiManager.getCurrentlyRunningJobCount());
 
         // Done
+        proxyEngine.stop();
         cntor.close();
     }
-
 }

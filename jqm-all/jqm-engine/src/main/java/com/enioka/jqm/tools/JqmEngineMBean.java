@@ -49,21 +49,6 @@ public interface JqmEngineMBean
     long getCumulativeJobInstancesCount();
 
     /**
-     * The number of currently running job instances
-     */
-    long getCurrentlyRunningJobCount();
-
-    /**
-     * True if, for all pollers, the last time the poller looped was less than a polling period ago.
-     */
-    boolean isAllPollersPolling();
-
-    /**
-     * True if at least one queue is full.
-     */
-    boolean isFull();
-
-    /**
      * The number of seconds since engine start.
      */
     long getUptime();
@@ -72,9 +57,9 @@ public interface JqmEngineMBean
      * The package version, in x.x.x form.
      */
     String getVersion();
-    
+
     /**
-     * The count, for all pollers, of running jobs that have run for more than their maxTimeRunning time.
+     * True if the engine has at least one running scheduler (poller) and if all schedulers are OK.
      */
-    int getLateJobs();
+    public boolean isUpAndRunning();
 }

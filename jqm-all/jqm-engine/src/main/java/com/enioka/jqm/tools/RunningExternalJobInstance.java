@@ -29,9 +29,9 @@ class RunningExternalJobInstance implements Runnable
     String opts;
     String logFile;
     int killCheckPeriodMs = 1000;
-    IScheduler qp = null;
+    ResourceScheduler qp = null;
 
-    public RunningExternalJobInstance(DbConn cnx, JobInstance job, IScheduler qp)
+    public RunningExternalJobInstance(DbConn cnx, JobInstance job, ResourceScheduler qp)
     {
         this.jobId = job.getId();
         this.ji = job;

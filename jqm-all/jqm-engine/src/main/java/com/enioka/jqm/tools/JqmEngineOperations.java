@@ -7,7 +7,7 @@ public interface JqmEngineOperations
      */
     public void stop();
 
-    public boolean areAllPollersPolling();
+    public boolean isUpAndRunning();
 
     public void resume();
 

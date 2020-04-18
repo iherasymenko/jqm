@@ -108,8 +108,6 @@ class InternalPoller implements Runnable
                 if (node == null || node.isStop())
                 {
                     jqmlogger.info("Node has received a stop order from the database or was removed from the database");
-                    jqmlogger.trace(
-                            "At stop order time, there are " + this.engine.getCurrentlyRunningJobCount() + " jobs running in the node");
                     this.run = false;
                     this.engine.stop();
                     break;

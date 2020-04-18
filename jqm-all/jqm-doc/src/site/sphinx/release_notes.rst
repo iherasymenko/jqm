@@ -38,6 +38,7 @@ The breaking changes are:
 * Java 1.6 and 1.7 are dropped in all JQM components - either for the JQM engine or the provided Java libraries. Note that JQM actively uses the newer Java features: there is no hope to recompile this version with 1.6. 1.6 and 1.7 users should either migrate to 1.8 (or 1.11) or stays with JQM 2.x.
 * Web APIs: SSL and encryptions and broken ciphers have been dropped. Only recent TLS with recent ciphers are now supported.
 * CLI : the internal CLI (the one called with `java -jar jqm.jar options…`) has been fully revamped. All scripts using it should be revised with the new, clearer options. If you use the .sh or .ps1 provided scripts, no changes.
+* A few JMX properties made no sense anymore on the engine bean and are now found on the resource scheduler or the job instance manager beans instead, or were removed. Generally, JMX hierarchy has changed to reflect the modifications in queuing logics.
 
 Deprecated
 +++++++++++++++

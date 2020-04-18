@@ -65,7 +65,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     private ObjectName name;
 
     // Threads that together constitute the engine
-    private DefaultResourceScheduler resourceScheduler = null;
+    private ResourceScheduler resourceScheduler = null;
     private InternalPoller intPoller = null;
     private Thread intPollerThread = null;
     private CronScheduler scheduler = null;
@@ -81,7 +81,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     private List<ResourceManagerBase> resourceManagers = new ArrayList<>();
 
     // DB connection resilience data
-    private volatile Queue<IScheduler> schedulerToRestart = new LinkedBlockingQueue<>();
+    private volatile Queue<ResourceScheduler> schedulerToRestart = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToFinalize = new LinkedBlockingQueue<>();
     private volatile Queue<RunningJobInstance> loaderToRestart = new LinkedBlockingQueue<>();
     private volatile Thread qpRestarter = null;
@@ -216,6 +216,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
 
         // Runners
         runningJobInstanceManager = new RunningJobInstanceManager();
+        runningJobInstanceManager.registerMBean(this);
         runnerManager = new RunnerManager(cnx);
 
         // Pollers (resource scheduler)
@@ -245,6 +246,9 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         jqmlogger.info("End of JQM engine initialization");
     }
 
+    /**
+     * Block until all pollers are dead.
+     */
     public void join()
     {
         try
@@ -263,6 +267,11 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     @Override
     public void stop()
     {
+        if (hasEnded)
+        {
+            return;
+        }
+
         synchronized (killHook)
         {
             jqmlogger.info("JQM engine " + this.node.getName() + " has received a stop order");
@@ -285,29 +294,17 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         // Resource Scheduler (includes pollers)
         if (this.resourceScheduler != null)
         {
-            this.resourceScheduler.stop();
+            this.resourceScheduler.stop(); // sync call. Returns only when poller is down.
         }
 
         // Scheduler
         this.scheduler.stop();
 
-        // Jetty is closed automatically when all pollers are down
-
-        // Wait for the end of the world
-        if (this.resourceScheduler != null)
-        {
-            try
-            {
-                this.ended.acquire();
-            }
-            catch (InterruptedException e)
-            {
-                jqmlogger.error("interrupted", e);
-            }
-        }
+        // Wait for the end of all job instances
+        this.runningJobInstanceManager.waitForAllThreads(60L * 1000);
 
         // Send a KILL signal to remaining job instances, and wait some more.
-        if (this.getCurrentlyRunningJobCount() > 0)
+        if (this.runningJobInstanceManager.getCurrentlyRunningJobCount() > 0)
         {
             this.runningJobInstanceManager.killAll();
             try
@@ -320,6 +317,45 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
             }
         }
 
+        // Also stop the internal poller
+        this.intPoller.stop();
+
+        // If here, all pollers are down. Stop everything else. (a signal, notably used by Jetty)
+        if (handler != null)
+        {
+            // This is an optional callback for the engine host.
+            handler.onNodeStopped();
+        }
+
+        // Reset the stop counter - we may want to restart the engine one day...
+        try (DbConn cnx = Helpers.getNewDbSession())
+        {
+            cnx.runUpdate("node_update_has_stopped_by_id", node.getId());
+            cnx.commit();
+        }
+        catch (Exception e)
+        {
+            jqmlogger.error("Could not store node new state in database during node shutdown", e);
+        }
+
+        // JMX
+        if (loadJmxBeans)
+        {
+            this.runningJobInstanceManager.unregisterMBean();
+            try
+            {
+                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                mbs.unregisterMBean(name);
+                jqmlogger.trace("unregistered bean " + name);
+            }
+            catch (Exception e)
+            {
+                jqmlogger.error("Could not unregister engine JMX bean", e);
+            }
+        }
+
+        // Pfiou.
+        hasEnded = true;
         jqmlogger.debug("Stop order was correctly handled. Engine for node " + this.node.getName() + " has stopped.");
     }
 
@@ -334,66 +370,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     public List<ResourceManagerBase> getResourceManagers()
     {
         return resourceManagers;
-    }
-
-    /**
-     * Called by the scheduler(s) when they stop.
-     */
-    synchronized void checkEngineEnd()
-    {
-        jqmlogger.trace("Checking if engine should end with the latest poller");
-
-        // There is currently only one scheduler allowed. So no need to check if all schedulers are done.
-        // It should be done here should we allow more schedulers one day.
-
-        if (hasEnded)
-        {
-            return;
-        }
-        jqmlogger.trace("The engine should end with the latest scheduler");
-        hasEnded = true;
-
-        // If here, all pollers are down. Stop everything else.
-        if (handler != null)
-        {
-            // This is an optional callback for the engine host.
-            handler.onNodeStopped();
-        }
-
-        // Also stop the internal poller
-        this.intPoller.stop();
-
-        // Reset the stop counter - we may want to restart one day
-        try (DbConn cnx = Helpers.getNewDbSession())
-        {
-            cnx.runUpdate("node_update_has_stopped_by_id", node.getId());
-            cnx.commit();
-        }
-        catch (Exception e)
-        {
-            jqmlogger.error("Could not store node new state in database during node shutdown", e);
-        }
-
-        // JMX
-        if (loadJmxBeans)
-        {
-            try
-            {
-                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-                mbs.unregisterMBean(name);
-                jqmlogger.trace("unregistered bean " + name);
-            }
-            catch (Exception e)
-            {
-                jqmlogger.error("Could not unregister engine JMX bean", e);
-            }
-        }
-
-        // Note: if present, the JMX listener is not stopped as it is JVM-global, like the JNDI context
-
-        // Done
-        this.ended.release();
-        jqmlogger.info("JQM engine has stopped");
     }
 
     /**
@@ -428,7 +404,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
      * This will ensure the scheduler is restarted when database connectivity is restored.<br>
      * Only scheduler which have called this method are restarted, other are deemed not to have crashed.
      */
-    void schedulerRestartNeeded(IScheduler s)
+    void schedulerRestartNeeded(ResourceScheduler s)
     {
         schedulerToRestart.add(s);
         startDbRestarter();
@@ -511,7 +487,7 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
                 }
 
                 // Restart schedulers
-                IScheduler scheduler = schedulerToRestart.poll();
+                ResourceScheduler scheduler = schedulerToRestart.poll();
                 while (scheduler != null)
                 {
                     jqmlogger.warn("resetting scheduler");
@@ -596,36 +572,6 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     }
 
     @Override
-    public long getCurrentlyRunningJobCount()
-    {
-        return this.resourceScheduler.getCurrentlyRunningJobCount();
-    }
-
-    @Override
-    public boolean isAllPollersPolling()
-    {
-        return this.resourceScheduler.isActuallyPolling();
-    }
-
-    @Override
-    public boolean areAllPollersPolling()
-    {
-        return isAllPollersPolling();
-    }
-
-    @Override
-    public boolean isFull()
-    {
-        return false;
-    }
-
-    @Override
-    public int getLateJobs()
-    {
-        return this.resourceScheduler.getLateJobs();
-    }
-
-    @Override
     public long getUptime()
     {
         return (Calendar.getInstance().getTimeInMillis() - this.startTime.getTimeInMillis()) / 1000;
@@ -665,5 +611,11 @@ class JqmEngine implements JqmEngineMBean, JqmEngineOperations
     public void refreshConfiguration()
     {
         this.intPoller.forceLoop();
+    }
+
+    @Override
+    public boolean isUpAndRunning()
+    {
+        return this.resourceScheduler != null && this.resourceScheduler.isActuallyScheduling();
     }
 }

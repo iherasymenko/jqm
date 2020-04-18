@@ -21,38 +21,12 @@ package com.enioka.jqm.tools;
 public interface DefaultResourceSchedulerMBean
 {
     /**
-     * The number of currently running job instances. Thread safe.
-     */
-    Integer getCurrentActiveThreadCount();
-
-    /**
      * Prevents the engine to take any more jobs on that scheduler. Once all running jobs end, the poller stops.
      */
     void stop();
 
     /**
-     * The total number of job instances that were run on this node/queue since the last history purge.
-     */
-    long getCumulativeJobInstancesCount();
-
-    /**
-     * The number of job instances that ended in the last minute divided by 60. A better method is to call
-     * {@link #getCumulativeJobInstancesCount()} and compute deltas between calls.
-     */
-    float getJobsFinishedPerSecondLastMinute();
-
-    /**
-     * The number of currently running job instances
-     */
-    long getCurrentlyRunningJobCount();
-
-    /**
      * True if the last time the poller looped was less than a period ago.
      */
-    boolean isActuallyPolling();
-
-    /**
-     * The count of running jobs that have run for more than their maxTimeRunning time.
-     */
-    int getLateJobs();
+    boolean isActuallyScheduling();
 }
