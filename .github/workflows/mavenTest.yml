@@ -54,7 +54,7 @@ jobs:
               with:
                   java-version: 11
             - name: test connection
-              run: psql -U jqm -p jqm -l
+              run: psql -l
             # - name: Build
             #   run: mvn install -DskipTests
             # - name: Test
