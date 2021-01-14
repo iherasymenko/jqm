@@ -53,7 +53,7 @@ jobs:
               uses: actions/setup-java@v1
               with:
                   java-version: 11
-            - name: Set selected color
+            - name: test connection
                 run: psql -U jqm -p jqm -l
             # - name: Build
             #   run: mvn install -DskipTests
