@@ -63,7 +63,6 @@ jobs:
                   path: "**/TEST-*.xml"
     publish-test-results:
         name: "Publish Unit Tests Results"
-        needs: test
         runs-on: ubuntu-latest
         steps:
             - name: Download Artifacts
