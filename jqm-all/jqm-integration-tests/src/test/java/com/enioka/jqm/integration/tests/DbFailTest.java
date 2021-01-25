@@ -16,7 +16,7 @@ public class DbFailTest extends JqmBaseTest
     public void before()
     {
         // These tests are HSQLDB dependent.
-        Assume.assumeTrue(JqmBaseTest.s != null);
+        AssumeHsqldb();
 
         // TODO: write some tests for PGSQL.
     }
@@ -27,7 +27,6 @@ public class DbFailTest extends JqmBaseTest
         this.addAndStartEngine();
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         this.sleep(2);
         jqmlogger.info("Restarting DB");
         s.start();
@@ -41,14 +40,12 @@ public class DbFailTest extends JqmBaseTest
         this.addAndStartEngine();
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         this.sleep(2);
         jqmlogger.info("Restarting DB");
         s.start();
         this.sleep(5);
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         this.sleep(2);
         jqmlogger.info("Restarting DB");
         s.start();
@@ -67,7 +64,6 @@ public class DbFailTest extends JqmBaseTest
 
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         jqmlogger.info("Restarting DB (as soon as possible)");
         s.start();
         this.sleep(5);
@@ -82,7 +78,6 @@ public class DbFailTest extends JqmBaseTest
 
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         this.sleep(5);
 
         jqmlogger.info("Restarting DB");
@@ -101,7 +96,6 @@ public class DbFailTest extends JqmBaseTest
 
         jqmlogger.info("Stopping db");
         s.stop();
-        this.waitDbStop();
         this.sleep(5);
 
         jqmlogger.info("Restarting DB");

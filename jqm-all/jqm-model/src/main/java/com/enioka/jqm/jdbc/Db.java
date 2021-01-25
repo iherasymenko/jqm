@@ -460,9 +460,11 @@ public class Db
                     BundleContext context = org.osgi.framework.FrameworkUtil.getBundle(getClass()).getBundleContext();
                     Loader<DbAdapter> loader = new Loader<DbAdapter>(context, DbAdapter.class, "(Adapter-Type=*)");
                     loader.start();
-                
+
                     for (ServiceReference<?> ref : loader.references)
                     {
+                        jqmlogger.info("\t\tFound DB adapter plugin {}:{}", ref.getBundle().getSymbolicName(),
+                                ref.getBundle().getVersion());
                         DbAdapter newAdapter = (DbAdapter) context.getService(ref);
                         if (newAdapter.compatibleWith(meta))
                         {

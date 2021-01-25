@@ -98,6 +98,11 @@ public class JndiContext extends InitialContext implements InitialContextFactory
             // return JqmEngine.latestNodeStartedName;
             return "not implemented";
         }
+        if (name.startsWith("internal://reset")) // For easier tests, as this is a global singleton hard to wire in bundles...
+        {
+            resetSingletons();
+            return null;
+        }
 
         // If in cache...
         if (singletons.containsKey(name))

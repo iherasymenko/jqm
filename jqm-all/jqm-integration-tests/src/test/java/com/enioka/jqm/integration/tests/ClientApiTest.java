@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.enioka.admin.MetaService;
@@ -41,6 +42,7 @@ import com.enioka.jqm.api.client.core.State;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
+@Ignore // TODO
 public class ClientApiTest extends JqmBaseTest
 {
     @Test

@@ -36,6 +36,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.enioka.jqm.api.client.core.JobInstance;
@@ -50,6 +51,7 @@ import com.enioka.jqm.test.helpers.TestHelpers;
  * Tests of the simple web API.
  *
  */
+@Ignore // TODO
 public class ApiSimpleTest extends JqmBaseTest
 {
     @Before

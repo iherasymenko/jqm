@@ -1,7 +1,6 @@
 package com.enioka.jqm.runner.java;
 
 import com.enioka.jqm.api.JobManager;
-import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.jdbc.DbManager;
 import com.enioka.jqm.model.JobDef.PathType;
 import com.enioka.jqm.model.JobInstance;
@@ -9,7 +8,9 @@ import com.enioka.jqm.runner.api.JobInstanceTracker;
 import com.enioka.jqm.runner.api.JobRunner;
 import com.enioka.jqm.runner.api.JobRunnerCallback;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.ServiceScope;
 
 /**
@@ -21,11 +22,21 @@ public class JavaRunner implements JobRunner
 {
     private ClassloaderManager classloaderManager;
 
-    static
+    @Activate
+    public void activate()
     {
         if (System.getSecurityManager() == null)
         {
             System.setSecurityManager(new SecurityManagerPayload());
+        }
+    }
+
+    @Deactivate
+    public void deactivate()
+    {
+        if (System.getSecurityManager() != null && System.getSecurityManager() instanceof SecurityManagerPayload)
+        {
+            System.setSecurityManager(null);
         }
     }
 

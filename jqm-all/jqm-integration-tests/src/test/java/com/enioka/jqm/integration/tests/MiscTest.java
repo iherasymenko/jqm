@@ -109,7 +109,7 @@ public class MiscTest extends JqmBaseTest
     public void testJobWithPersistenceUnit() throws Exception
     {
         // The PU test expects an HSQLDB database which does not exist when running the tests on other databases
-        Assume.assumeTrue(JqmBaseTest.s != null);
+        AssumeHsqldb();
 
         CreationTools.createDatabaseProp("jdbc/test", "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:testdbmarsu", "SA", "", cnx,
                 "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS", null);
@@ -256,7 +256,7 @@ public class MiscTest extends JqmBaseTest
     }
 
     // TODO: Need to fix the hack inside of EngineCallback.onNodeConfigurationRead()
-    //@Test
+    // @Test
     public void testMultiLog() throws Exception
     {
         PrintStream out_ini = System.out;

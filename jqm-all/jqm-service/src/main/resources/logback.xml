@@ -1,12 +1,15 @@
 <configuration>
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{dd/MM HH:mm:ss.SSS}|%-5level|%-40.40thread|%20.20logger{1}|%exception%message%n</pattern>
+        </encoder>
+    </appender>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
+    <logger name="hsqldb" level="warn" />
+    <logger name="com.enioka.jqm.jdbc" level="info" />
+    <logger name="org.ops4j.pax" level="info" />
 
-  <root level="debug">
-    <appender-ref ref="STDOUT" />
-  </root>
+    <root level="info">
+        <appender-ref ref="consoleAppender" />
+    </root>
 </configuration>

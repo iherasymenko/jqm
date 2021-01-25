@@ -15,28 +15,19 @@
  */
 package com.enioka.jqm.integration.tests;
 
-import java.io.InputStream;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.systemProperty;
+import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
+
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.inject.Inject;
-import javax.naming.NamingException;
-import javax.naming.spi.NamingManager;
-import javax.xml.stream.XMLStreamException;
-
-import static org.ops4j.pax.exam.CoreOptions.*;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Configuration;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.junit.PaxExamParameterized;
-import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerClass;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 import com.enioka.jqm.api.client.core.JobInstance;
 import com.enioka.jqm.api.client.core.JqmClientFactory;
@@ -47,17 +38,22 @@ import com.enioka.jqm.engine.JqmEngineOperations;
 import com.enioka.jqm.jdbc.Db;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.jdbc.DbManager;
-import com.enioka.jqm.jndi.JndiContext;
 import com.enioka.jqm.service.EngineCallback;
+import com.enioka.jqm.test.helpers.DebugHsqlDbServer;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
-import org.hsqldb.Server;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerClass;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,16 +62,18 @@ import org.slf4j.LoggerFactory;
 public class JqmBaseTest
 {
     public static Logger jqmlogger = LoggerFactory.getLogger(JqmBaseTest.class);
-    public static Server s;
+
     protected static Db db;
+
     public Map<String, JqmEngineOperations> engines = new HashMap<>();
     public List<DbConn> cnxs = new ArrayList<>();
-    //public static JndiContext jndiContext = null;
-
     protected DbConn cnx;
 
     @Inject
     protected static BundleContext bundleContext;
+
+    @Inject
+    protected DebugHsqlDbServer s;
 
     @Rule
     public TestName testName = new TestName();
@@ -111,7 +109,7 @@ public class JqmBaseTest
                 wrappedBundle(mavenBundle("javax.enterprise", "cdi-api", "1.0")), // versions should resolve once service is OK
                 mavenBundle("org.ow2.asm", "asm").versionAsInProject(),
                 mavenBundle("org.eclipse.jetty", "jetty-annotations").versionAsInProject(),
-                //mavenBundle("org.eclipse.jetty", "jetty-deploy", "9.4.31.v20200723"),
+                // mavenBundle("org.eclipse.jetty", "jetty-deploy", "9.4.31.v20200723"),
                 mavenBundle("org.eclipse.jetty", "jetty-http").versionAsInProject(),
                 mavenBundle("org.eclipse.jetty", "jetty-io").versionAsInProject(),
                 mavenBundle("org.eclipse.jetty", "jetty-jndi").versionAsInProject(),
@@ -122,23 +120,21 @@ public class JqmBaseTest
                 mavenBundle("org.eclipse.jetty", "jetty-util").versionAsInProject(),
                 mavenBundle("org.eclipse.jetty", "jetty-webapp").versionAsInProject(),
                 mavenBundle("org.eclipse.jetty", "jetty-xml").versionAsInProject(),
-                //mavenBundle("org.eclipse.jetty.osgi", "jetty-osgi-boot", "9.4.31.v20200723"),
-                //mavenBundle("org.eclipse.jetty.toolchain", "jetty-osgi-servlet-api", "4.0.1"),
+                // mavenBundle("org.eclipse.jetty.osgi", "jetty-osgi-boot", "9.4.31.v20200723"),
+                // mavenBundle("org.eclipse.jetty.toolchain", "jetty-osgi-servlet-api", "4.0.1"),
 
                 // SPI FLY
                 mavenBundle("org.apache.aries.spifly", "org.apache.aries.spifly.dynamic.bundle", "1.3.2"),
                 mavenBundle("org.apache.aries", "org.apache.aries.util", "1.1.3"),
 
                 // OW2 ASM
-                mavenBundle("org.ow2.asm", "asm", "9.0"),
-                mavenBundle("org.ow2.asm", "asm-commons", "9.0"),
-                mavenBundle("org.ow2.asm", "asm-util", "9.0"),
-                mavenBundle("org.ow2.asm", "asm-tree", "9.0"),
+                mavenBundle("org.ow2.asm", "asm", "9.0"), mavenBundle("org.ow2.asm", "asm-commons", "9.0"),
+                mavenBundle("org.ow2.asm", "asm-util", "9.0"), mavenBundle("org.ow2.asm", "asm-tree", "9.0"),
                 mavenBundle("org.ow2.asm", "asm-analysis", "9.0"),
 
                 // Eclipse OSGi
-                //mavenBundle("org.eclipse.osgi", "org.eclipse.osgi", "3.6.0.v20100517").noStart(),
-                //mavenBundle("org.eclipse.osgi", "org.eclipse.osgi.services", "3.2.100.v20100503").noStart(),
+                // mavenBundle("org.eclipse.osgi", "org.eclipse.osgi", "3.6.0.v20100517").noStart(),
+                // mavenBundle("org.eclipse.osgi", "org.eclipse.osgi.services", "3.2.100.v20100503").noStart(),
 
                 // Web security
                 mavenBundle("org.apache.shiro", "shiro-core").versionAsInProject(),
@@ -150,8 +146,7 @@ public class JqmBaseTest
                 wrappedBundle(mavenBundle("com.beust", "jcommander").versionAsInProject()),
 
                 // LOG
-                mavenBundle("commons-logging", "commons-logging", "1.2"),
-                mavenBundle("org.slf4j", "slf4j-api").versionAsInProject(),
+                mavenBundle("commons-logging", "commons-logging", "1.2"), mavenBundle("org.slf4j", "slf4j-api").versionAsInProject(),
                 mavenBundle("ch.qos.logback", "logback-core").versionAsInProject(),
                 mavenBundle("ch.qos.logback", "logback-classic").versionAsInProject(),
 
@@ -187,58 +182,37 @@ public class JqmBaseTest
                 mavenBundle("com.enioka.jqm", "jqm-integration-tests").versionAsInProject(),
 
                 // Junit itself
-                junitBundles());
-    }
+                junitBundles(),
 
-    @BeforeClass
-    public static void testInit() throws Exception
-    {
-        systemProperty("org.ops4j.pax.url.mvn.repositories").value("https://repo1.maven.org/maven2@id=central");
-        systemProperty("org.ops4j.pax.url.mvn.useFallbackRepositories").value("false");
-
-        if (db == null)
-        {
-            // If needed, create an HSQLDB server.
-            String dbName = System.getenv("DB");
-            if (dbName == null || "hsqldb".equals(dbName))
-            {
-                s = new Server();
-                s.setDatabaseName(0, "testdbengine");
-                s.setDatabasePath(0, "mem:testdbengine");
-                s.setLogWriter(null);
-                s.setSilent(true);
-                s.start();
-            }
-
-            // In all cases load the datasource. (the helper itself will load the property file if any).
-            db = DbManager.getDb();
-        }
+                // Log config file
+                systemProperty("logback.configurationFile")
+                        .value("file:" + Paths.get("../jqm-service/target/classes/logback.xml").toAbsolutePath().normalize().toString()),
+                systemProperty("org.ops4j.pax.url.mvn.repositories").value("https://repo1.maven.org/maven2@id=central"),
+                systemProperty("org.ops4j.pax.url.mvn.useFallbackRepositories").value("false"));
     }
 
     @Before
-    public void beforeTest()
+    public void beforeEachTest()
     {
         jqmlogger.debug("**********************************************************");
         jqmlogger.debug("Starting test " + testName.getMethodName());
 
-        /*
-         * try { ((JndiContext) NamingManager.getInitialContext(null)).resetSingletons(); } catch (NamingException e) {
-         * jqmlogger.warn("Could not purge test JNDI context", e); }
-         */
         JqmClientFactory.resetClient(null);
+
+        if (db == null)
+        {
+            // In all cases load the datasource. (the helper itself will load the property file if any).
+            db = DbManager.getDb();
+        }
+
         cnx = getNewDbSession();
         TestHelpers.cleanup(cnx);
         TestHelpers.createTestData(cnx);
         cnx.commit();
-
-        ServiceReference ref = bundleContext.getServiceReference(JndiContext.class);
-        JndiContext jndiContext = (JndiContext) bundleContext.getService(ref);
-        jndiContext.resetSingletons();
-        bundleContext.ungetService(ref);
     }
 
     @After
-    public void afterTest()
+    public void afterEachTest()
     {
         jqmlogger.debug("*** Cleaning after test " + testName.getMethodName());
         for (String k : engines.keySet())
@@ -270,6 +244,11 @@ public class JqmBaseTest
     protected void AssumeNotWindows()
     {
         Assume.assumeFalse(System.getProperty("os.name").toLowerCase().startsWith("win"));
+    }
+
+    protected void AssumeHsqldb()
+    {
+        Assume.assumeTrue(s.isHsqldb());
     }
 
     protected boolean onWindows()
@@ -317,10 +296,10 @@ public class JqmBaseTest
 
     protected void sleep(int s)
     {
-        this.sleepms(1000 * s);
+        sleepms(1000 * s);
     }
 
-    protected void sleepms(int ms)
+    protected static void sleepms(int ms)
     {
         try
         {
@@ -332,21 +311,12 @@ public class JqmBaseTest
         }
     }
 
-    protected void waitDbStop()
-    {
-        while (s.getState() != 16)
-        {
-            this.sleepms(1);
-        }
-    }
-
     protected void simulateDbFailure()
     {
         if (db.getProduct().contains("hsql"))
         {
             jqmlogger.info("DB is going down");
             s.stop();
-            this.waitDbStop();
             jqmlogger.info("DB is now fully down");
             this.sleep(1);
             jqmlogger.info("Restarting DB");
