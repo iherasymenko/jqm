@@ -260,11 +260,19 @@ public class JndiContext extends InitialContext implements InitialContextFactory
     public void bind(String name, Object obj) throws NamingException
     {
         jqmlogger.debug("binding [" + name + "] to a [" + obj.getClass().getCanonicalName() + "]");
+
+        if (name.equals("rmi://") && obj instanceof Registry)
+        {
+            jqmlogger.debug("Binding JMX registry inside JNDI directory");
+            this.r = (Registry) obj;
+            return;
+        }
+
         if (r != null && name.startsWith("rmi://"))
         {
             try
             {
-                jqmlogger.debug("binding [" + name.split("/")[3] + "] to a [" + obj.getClass().getCanonicalName() + "]");
+                jqmlogger.debug("Binding [" + name.split("/")[3] + "] to a [" + obj.getClass().getCanonicalName() + "]");
                 this.r.bind(name.split("/")[3], (Remote) obj);
             }
             catch (Exception e)

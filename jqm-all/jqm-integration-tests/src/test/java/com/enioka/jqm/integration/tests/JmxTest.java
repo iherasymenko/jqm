@@ -28,20 +28,17 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.enioka.jqm.api.client.core.JobRequest;
 import com.enioka.jqm.engine.JqmEngineMBean;
 import com.enioka.jqm.engine.QueuePollerMBean;
-import com.enioka.jqm.runner.java.JavaJobInstanceTrackerMBean;
+import com.enioka.jqm.runner.java.api.JavaJobInstanceTrackerMBean;
 import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
 public class JmxTest extends JqmBaseTest
 {
-    // TODO
-    @Ignore
     @Test
     public void jmxRemoteTest() throws Exception
     {
