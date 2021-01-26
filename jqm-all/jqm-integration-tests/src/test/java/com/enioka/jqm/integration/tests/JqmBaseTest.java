@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import com.enioka.jqm.api.client.core.JobInstance;
 import com.enioka.jqm.api.client.core.JqmClientFactory;
@@ -192,7 +194,7 @@ public class JqmBaseTest
     }
 
     @Before
-    public void beforeEachTest()
+    public void beforeEachTest() throws NamingException
     {
         jqmlogger.debug("**********************************************************");
         jqmlogger.debug("Starting test " + testName.getMethodName());
@@ -209,6 +211,9 @@ public class JqmBaseTest
         TestHelpers.cleanup(cnx);
         TestHelpers.createTestData(cnx);
         cnx.commit();
+
+        // Force JNDI directory loading
+        InitialContext.doLookup("jdbc/marsu");
     }
 
     @After

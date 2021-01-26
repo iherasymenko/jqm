@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import com.enioka.jqm.jdbc.DatabaseException;
 import com.enioka.jqm.jdbc.DbConn;
@@ -199,6 +201,17 @@ public class JqmEngine implements JqmEngineMBean, JqmEngineOperations
         {
             loadJmxBeans = false;
             jqmlogger.info("JMX management beans will not be loaded as JMX server port is null or zero");
+        }
+
+        // Hack to set global server name
+        try
+        {
+            InitialContext.doLookup("serverName://" + node.getName());
+        }
+        catch (NamingException e)
+        {
+            // no one cares.
+            jqmlogger.warn("Could not register server name inside JNDI registry", e);
         }
 
         // Scheduler

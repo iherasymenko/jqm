@@ -6,6 +6,7 @@ import com.enioka.jqm.test.helpers.CreationTools;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 
 /**
  * A set of configuration launches helpful for some bug inquiries.
@@ -13,6 +14,7 @@ import org.junit.Assert;
  */
 public class ZHelperManualTest extends JqmBaseTest
 {
+    @Ignore
     // @Test
     public void testDbFailureUnderLoadWithExternalDb() throws Exception
     {

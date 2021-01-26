@@ -58,6 +58,7 @@ public class JndiContext extends InitialContext implements InitialContextFactory
     private List<ObjectName> jmxNames = new ArrayList<>();
     private Registry r = null;
     private ClassLoader extResources = ExtClassLoader.instance;
+    private String serverName = null;
 
     /**
      * Create a new Context
@@ -92,11 +93,15 @@ public class JndiContext extends InitialContext implements InitialContextFactory
                 throw e1;
             }
         }
+        // TODO: find a non-hackish way to do give latest server started. (service offered by engine?)
         if (name.endsWith("serverName"))
         {
-            // TODO: this was a hack anyway. Should be removed soon.
-            // return JqmEngine.latestNodeStartedName;
-            return "not implemented";
+            return serverName;
+        }
+        if (name.startsWith("serverName://"))
+        {
+            serverName = name.split("//")[1];
+            return null;
         }
         if (name.startsWith("internal://reset")) // For easier tests, as this is a global singleton hard to wire in bundles...
         {
@@ -131,10 +136,8 @@ public class JndiContext extends InitialContext implements InitialContextFactory
                 try
                 {
                     ResourceFactory rf = new ResourceFactory(
-                            /*
-                             * TODO : check Thread.currentThread().getContextClassLoader() instanceof
-                             * com.enioka.jqm.runner.api.PayloadClassLoader ? Thread.currentThread().getContextClassLoader() :
-                             */extResources);
+                            Thread.currentThread().getContextClassLoader() instanceof org.osgi.framework.BundleReference ? extResources
+                                    : Thread.currentThread().getContextClassLoader());
                     res = rf.getObjectInstance(d, null, this, new Hashtable<String, Object>());
                 }
                 catch (Exception e)
@@ -146,8 +149,7 @@ public class JndiContext extends InitialContext implements InitialContextFactory
                 }
 
                 // Cache result
-                // TODO: check
-                if (res.getClass().getClassLoader() != null) // instanceof PayloadClassLoader)
+                if (res.getClass().getClassLoader() != extResources)
                 {
                     jqmlogger.warn(
                             "A JNDI resource was defined as singleton but was loaded by a payload class loader - it won't be cached to avoid class loader leaks");
@@ -186,10 +188,8 @@ public class JndiContext extends InitialContext implements InitialContextFactory
             // We use the current thread loader to find the resource and resource factory class - ext is inside that CL.
             // This is done only for payload CL - engine only need ext, not its own CL (as its own CL does NOT include ext).
             ResourceFactory rf = new ResourceFactory(
-                    /*
-                     * TODO : check Thread.currentThread().getContextClassLoader() instanceof com.enioka.jqm.runner.api.PayloadClassLoader ?
-                     * Thread.currentThread().getContextClassLoader() :
-                     */extResources);
+                    Thread.currentThread().getContextClassLoader() instanceof org.osgi.framework.BundleReference ? extResources
+                            : Thread.currentThread().getContextClassLoader());
             return rf.getObjectInstance(d, null, this, new Hashtable<String, Object>());
         }
         catch (Exception e)
@@ -297,14 +297,6 @@ public class JndiContext extends InitialContext implements InitialContextFactory
         {
             this.r = r;
         }
-    }
-
-    /**
-     * @return the class loader holding the ext directory (or null if no ext directory - should never happen)
-     */
-    ClassLoader getExtCl()
-    {
-        return this.extResources;
     }
 
     @Override

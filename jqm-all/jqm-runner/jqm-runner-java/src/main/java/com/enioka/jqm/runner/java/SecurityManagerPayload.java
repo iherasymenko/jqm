@@ -38,6 +38,13 @@ public class SecurityManagerPayload extends SecurityManager
         // Default implementation for payloads, no checks for inner code.
         if (isPayloadRequest())
         {
+            // Allow JMX registration, whatever the JVM defaults say.
+            if (perm.toString().equals("(\"javax.management.MBeanTrustPermission\" \"register\")"))
+            {
+                return;
+            }
+
+            // Default case: apply JVM default.
             super.checkPermission(perm, context);
         }
         else
