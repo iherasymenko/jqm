@@ -12,6 +12,7 @@ import org.junit.Ignore;
  * A set of configuration launches helpful for some bug inquiries.
  *
  */
+@Ignore
 public class ZHelperManualTest extends JqmBaseTest
 {
     @Ignore

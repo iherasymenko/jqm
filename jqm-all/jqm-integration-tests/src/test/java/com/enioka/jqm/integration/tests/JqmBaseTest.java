@@ -44,10 +44,12 @@ import com.enioka.jqm.service.EngineCallback;
 import com.enioka.jqm.test.helpers.DebugHsqlDbServer;
 import com.enioka.jqm.test.helpers.TestHelpers;
 
+import org.apache.shiro.util.Assert;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -213,7 +215,7 @@ public class JqmBaseTest
         cnx.commit();
 
         // Force JNDI directory loading
-        InitialContext.doLookup("jdbc/marsu");
+        InitialContext.doLookup("string/debug");
     }
 
     @After
@@ -231,6 +233,16 @@ public class JqmBaseTest
             cnx.close();
         }
         cnxs.clear();
+
+        // Reset the caches - no side effect between tests?
+        try
+        {
+            InitialContext.doLookup("internal://reset");
+        }
+        catch (NamingException e)
+        {
+            // jqmlogger.warn("Could not purge test JNDI context", e);
+        }
 
         // Java 6 GC being rather inefficient, we must run it multiple times to correctly collect Jetty-created class loaders and avoid
         // permgen issues
@@ -369,5 +381,14 @@ public class JqmBaseTest
                     + h.getPosition());
         }
         jqmlogger.debug("==========================================================================================");
+    }
+
+    /**
+     * This test simply tests pax exam loads.
+     */
+    @Test
+    public void testContainerStarts()
+    {
+        Assert.isTrue(true);
     }
 }

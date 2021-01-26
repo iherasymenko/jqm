@@ -108,6 +108,10 @@ public class JndiContext extends InitialContext implements InitialContextFactory
             resetSingletons();
             return null;
         }
+        if (name.equals("cl://ext")) // special case needed for tests, as the ext CL will always be the same (shared between OSGi runners)
+        {
+            return this.extResources;
+        }
 
         // If in cache...
         if (singletons.containsKey(name))
@@ -148,8 +152,8 @@ public class JndiContext extends InitialContext implements InitialContextFactory
                     throw ex;
                 }
 
-                // Cache result
-                if (res.getClass().getClassLoader() != extResources)
+                // Cache result (if loaded by ext CL or below)
+                if (!isLoadedByExtClassloader(res))
                 {
                     jqmlogger.warn(
                             "A JNDI resource was defined as singleton but was loaded by a payload class loader - it won't be cached to avoid class loader leaks");
@@ -358,5 +362,19 @@ public class JndiContext extends InitialContext implements InitialContextFactory
         {
             throw new RuntimeException("Could not fetch Platform Class Loader", e);
         }
+    }
+
+    private boolean isLoadedByExtClassloader(Object o)
+    {
+        ClassLoader cl = extResources;
+        do
+        {
+            if (o.getClass().getClassLoader() == cl)
+            {
+                return true;
+            }
+            cl = cl.getParent();
+        } while (cl != null);
+        return o.getClass().getClassLoader() == null; // special case, as null is in many JVMs the root CL.
     }
 }

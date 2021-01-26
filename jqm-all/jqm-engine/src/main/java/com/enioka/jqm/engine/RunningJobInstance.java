@@ -8,16 +8,12 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.naming.spi.NamingManager;
 
-import com.enioka.jqm.runner.api.JobInstanceTracker;
-import com.enioka.jqm.runner.api.JobRunner;
-import com.enioka.jqm.runner.api.JobRunnerCallback;
 import com.enioka.jqm.api.JobRunnerException;
 import com.enioka.jqm.api.client.core.JqmClientFactory;
 import com.enioka.jqm.api.client.core.SimpleApiSecurity;
-import com.enioka.jqm.cl.ExtClassLoader;
 import com.enioka.jqm.jdbc.DbConn;
 import com.enioka.jqm.jdbc.DbManager;
 import com.enioka.jqm.jdbc.QueryResult;
@@ -27,6 +23,9 @@ import com.enioka.jqm.model.Instruction;
 import com.enioka.jqm.model.JobInstance;
 import com.enioka.jqm.model.Node;
 import com.enioka.jqm.model.State;
+import com.enioka.jqm.runner.api.JobInstanceTracker;
+import com.enioka.jqm.runner.api.JobRunner;
+import com.enioka.jqm.runner.api.JobRunnerCallback;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -394,7 +393,14 @@ public class RunningJobInstance implements Runnable, JobRunnerCallback
     @Override
     public ClassLoader getExtensionClassloader()
     {
-        return ExtClassLoader.instance;
+        try
+        {
+            return (ClassLoader) InitialContext.doLookup("cl://ext");
+        }
+        catch (NamingException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

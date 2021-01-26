@@ -89,7 +89,8 @@ public class PackageTest extends JqmBaseTest
         JqmSimpleTest.create(cnx, "pyl.PckJBInheritance").run(this);
     }
 
-    @Test(expected = NoResolvedResultException.class)
+    // Cannot work in an OSGi container - we would need to shade shrinwrap here...
+    // @Test(expected = NoResolvedResultException.class)
     public void testFailingDependency() throws Exception
     {
         jqmlogger.debug("**********************************************************");
